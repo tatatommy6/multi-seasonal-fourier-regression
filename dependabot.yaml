@@ -1,6 +1,6 @@
 version: 2
 updates:
   - package-ecosystem: "pip"
-    directory: "/" # requirements.txt가 있는 위치
+    directory: "/requirements.txt" # requirements.txt가 있는 위치
     schedule:
       interval: "weekly"
