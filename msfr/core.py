@@ -40,3 +40,4 @@ class MSFR(nn.Module):
     #             feats.append(torch.sin(w * t))
     #             feats.append(torch.cos(w * t))
     #     return torch.cat(feats, dim=1)  # (B, num_features)
+    
