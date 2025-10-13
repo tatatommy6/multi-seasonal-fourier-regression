@@ -29,10 +29,9 @@ class MSFR(nn.Module):
         return torch.zeros(1,1) # 임시값
         # return F.linear(input, self.weight, self.bias) 선형회귀 코드에서 가져옴
 
-
-
     # def forward(self, t: torch.Tensor) -> torch.Tensor:
-    #     t = t.view(-1, 1)  # (B,1)
+    #     TODO: 각 feature 마다 주기성을 가지는지 안 가지는지 확인이 필요
+    #     
     #     feats = []
     #     for P in self.seasonal_periods:
     #         for k in range(1, self.n_harmonics + 1):
@@ -40,4 +39,3 @@ class MSFR(nn.Module):
     #             feats.append(torch.sin(w * t))
     #             feats.append(torch.cos(w * t))
     #     return torch.cat(feats, dim=1)  # (B, num_features)
-    
