@@ -1,4 +1,5 @@
 import torch
+import math
 import torch.nn as nn
 from torch.nn import functional as F # 뭔까 쓸거 같아서 일단 임포트
 from torch.nn.parameter import Parameter
@@ -26,8 +27,9 @@ class MSFR(nn.Module):
         # 근데 여기서 주기성을 지닌 feature가 있고, 추세가 있는 feature가 있는데, 이걸 어떻게 구분해야 하지
 
     def forward(self, input: torch.Tensor) -> torch.Tensor:
-        return torch.zeros(1,1) # 임시값
-        # return F.linear(input, self.weight, self.bias) 선형회귀 코드에서 가져옴
+        print(self.weight.size())
+        print(self.bias.size())
+        return self.weight * torch.sin(input * 2 * math.pi)+self.bias # 프로토타입으로 가중치랑 바이어스만 부여 
 
     # def forward(self, t: torch.Tensor) -> torch.Tensor:
     #     TODO: 각 feature 마다 주기성을 가지는지 안 가지는지 확인이 필요
