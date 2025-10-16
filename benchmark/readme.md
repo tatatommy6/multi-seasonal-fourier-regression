@@ -4,7 +4,7 @@
 3. 어떤 데이터셋을 사용했는지 `readme.md`를 만들어 라이선스에 맞게 출처 남기기(Jupyter Notebook 사용 시 노트북 파일에 markdown을 사용하여 readme.md 파일을 대신해도 됨)
 4. 상관은 없으나 되도록 아래 템플릿을 따라 작성하기 바람
 
-### Templete for benchmark
+### Template for benchmark
 - readme.md
 
 ``` markdown
