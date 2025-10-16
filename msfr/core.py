@@ -21,7 +21,10 @@ class MSFR(nn.Module):
         
         self.weight = Parameter(torch.empty((output_dim, input_dim), device=self.device)) # 일단 다른 레이어랑 shape 맞추고, 계산에서 전치해서 행렬 곱 시 shape가 [batch, output_dim] 이 되도록 함
         self.bias = Parameter(torch.empty(output_dim, device=self.device))
-        self.n_harmonics = n_harmonics # 얘도 파라미터로 할까
+        self.n_harmonics = n_harmonics # 얘도 파라미터로 할까 
+        # 지금처럼 상수로 두면 모델이 안정적이지만
+        # 파라미터로 바꾸면 모델이 주기를 학습해서 조정가능함. 하지만 훈련 난이도가 높아지고 불안정해질 수 있음
+        # 너가 선택해 난 안바꾸는게 나을거같음.
 
         # 이게 다변수 선형회귀처럼 하나의 x에 여러 feature를 넣을 수 있어야 하니까 input_dim이 필요
         # 근데 여기서 주기성을 지닌 feature가 있고, 추세가 있는 feature가 있는데, 이걸 어떻게 구분해야 하지
