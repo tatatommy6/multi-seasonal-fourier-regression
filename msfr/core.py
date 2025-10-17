@@ -1,7 +1,7 @@
 import torch
 import math
 import torch.nn as nn
-from torch.nn import functional as F # 뭔까 쓸거 같아서 일단 임포트
+from torch.nn import functional as F # 뭔까 쓸거 같아서 일단 임포트 / 근데 아직까지 안 씀, 하모닉스로 급수화 해도 안쓰면 지우기로
 from torch.nn.parameter import Parameter
 
 class MSFR(nn.Module):
@@ -19,15 +19,23 @@ class MSFR(nn.Module):
         self.reg_lambda = reg_lambda
         self.trend = trend
         
-        self.weight = Parameter(torch.empty((output_dim, input_dim), device=self.device)) # 일단 다른 레이어랑 shape 맞추고, 계산에서 전치해서 행렬 곱 시 shape가 [batch, output_dim] 이 되도록 함
+        self.weight = Parameter(torch.empty((output_dim, input_dim), device=self.device))
         self.bias = Parameter(torch.empty(output_dim, device=self.device))
-        self.n_harmonics = n_harmonics # 얘도 파라미터로 할까 
-        # 지금처럼 상수로 두면 모델이 안정적이지만
-        # 파라미터로 바꾸면 모델이 주기를 학습해서 조정가능함. 하지만 훈련 난이도가 높아지고 불안정해질 수 있음
-        # 너가 선택해 난 안바꾸는게 나을거같음.
+        self.season = Parameter(torch.empty(input_dim, device=self.device))
+        self.n_harmonics = n_harmonics # 일단 유지하고 필요하다면 파라미터화
 
         # 이게 다변수 선형회귀처럼 하나의 x에 여러 feature를 넣을 수 있어야 하니까 input_dim이 필요
-        # 근데 여기서 주기성을 지닌 feature가 있고, 추세가 있는 feature가 있는데, 이걸 어떻게 구분해야 하지
+        # 주기성을 지닌 feature가 있고, 추세가 있는 feature가 있는데, 이걸 어떻게 구분해야 하지
+        # 이전 프로토타입은 주기 설정이 불가능함 -> 주기 추가 -> 테스트용 벤치마크로 돌려볼 예정
 
     def forward(self, input: torch.Tensor) -> torch.Tensor:
-        return torch.sin(input * 2 * math.pi) @ self.weight.T + self.bias # 프로토타입으로 가중치랑 바이어스만 부여 (행렬 곱 연산)
+        a = self.weight.T # 진폭
+        b = self.season / (2 * math.pi) # 주기 함수 계수
+        # x축 평행 이동을 위한 c 변수가 과연 필요할까
+        d = self.bias # y축 평행 이동
+
+        # input sixe : [batch, input_dim]
+        # a size : [input_dim, output_dim]
+        # return value size: [batch, output_dim]
+
+        return (torch.sin(input * b) @ a) + d
