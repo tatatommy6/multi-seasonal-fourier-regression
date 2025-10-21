@@ -1,7 +1,6 @@
 import torch
 import math
 import torch.nn as nn
-from torch.nn import functional as F # 뭔까 쓸거 같아서 일단 임포트 / 근데 아직까지 안 씀, 하모닉스로 급수화 해도 안쓰면 지우기로
 from torch.nn.parameter import Parameter
 
 class MSFR(nn.Module):
@@ -23,10 +22,6 @@ class MSFR(nn.Module):
         self.bias = Parameter(torch.empty(output_dim, device=self.device))
         self.season = Parameter(torch.empty(input_dim, device=self.device))
         self.n_harmonics = n_harmonics # 일단 유지하고 필요하다면 파라미터화
-
-        # 이게 다변수 선형회귀처럼 하나의 x에 여러 feature를 넣을 수 있어야 하니까 input_dim이 필요
-        # 주기성을 지닌 feature가 있고, 추세가 있는 feature가 있는데, 이걸 어떻게 구분해야 하지
-        # 이전 프로토타입은 주기 설정이 불가능함 -> 주기 추가 -> 테스트용 벤치마크로 돌려볼 예정
 
     def forward(self, input: torch.Tensor) -> torch.Tensor:
         a = self.weight.T # 진폭
