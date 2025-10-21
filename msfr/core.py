@@ -23,16 +23,16 @@ class MSFR(nn.Module):
         trend_dim = input_dim if trend in ["linear", "quadratic"] else 0
         total_features = input_dim * (2 * n_harmonics) + trend_dim
 
-        self.weight = Parameter(torch.empty((output_dim, total_features), device=self.device))
+        self.weight = Parameter(torch.empty((output_dim, total_features), device=self.device)) #torch.empty()를 이용하여 텐서를 만들기만 하고 아직 채우진 않음
         self.bias = Parameter(torch.empty(output_dim, device=self.device))
-        nn.init.xavier_uniform_(self.weight)
-        nn.init.zeros_(self.bias)
+        nn.init.xavier_uniform_(self.weight) # xavier_uniform_: 입력, 출력 크기 기준으로 가중치 분산을 균형 있게 설정 -> 학습 안정성 향상
+        nn.init.zeros_(self.bias) # bias를 0으로 초기화
 
     def forward(self, input: torch.Tensor) -> torch.Tensor:
-        x = input.unsqueeze(-1)
+        x = input.unsqueeze(-1) #x의 shape: (batch_size, input_dim, 1)
         harmonics = torch.arange(1, self.n_harmonics + 1, device=self.device).float()
         sin_terms = torch.sin(x * harmonics * 2 * math.pi)
         cos_terms = torch.cos(x * harmonics * 2 * math.pi)
-        features = torch.cat([sin_terms, cos_terms], dim=-1)
-        features = features.view(features.size(0), -1)
+        features = torch.cat([sin_terms, cos_terms], dim=-1) #torch.cat() : 여러개의 텐서를 하나로 연결하는 함수 (이때 텐서들의 차원은 다 같아야함)
+        features = features.view(features.size(0), -1) #(batch_size, input_dim * 2 * n_harmonics) 형태로 flatten
 
