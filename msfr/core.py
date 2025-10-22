@@ -12,11 +12,11 @@ class MSFR(nn.Module):
     - reg_lambda: 정규화 강도
     """
     
-    def __init__(self, input_dim, output_dim, n_harmonics=3, trend="linear", reg_lambda=0.0, device=None):
+    def __init__(self, input_dim, output_dim, n_harmonics=3, trend=None, reg_lambda=0.0, device=None):
         super().__init__()
         self.device = device or torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self.n_harmonics = n_harmonics
-        self.trend = trend
+        self.trend = trend # 추세는 잠시 사용하지 않기로, 더 알아보고 싶음
         self.reg_lambda = reg_lambda
 
         # weight 크기 = output_dim x (input_dim * (2*n_harmonics + trend_term))
@@ -36,3 +36,5 @@ class MSFR(nn.Module):
         features = torch.cat([sin_terms, cos_terms], dim=-1) #torch.cat() : 여러개의 텐서를 하나로 연결하는 함수 (이때 텐서들의 차원은 다 같아야함)
         features = features.view(features.size(0), -1) #(batch_size, input_dim * 2 * n_harmonics) 형태로 flatten
 
+        #TODO: 추세 항 추가 구현
+        return features @ self.weight.T + self.bias

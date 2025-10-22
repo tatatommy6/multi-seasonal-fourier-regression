@@ -1,5 +1,5 @@
 ## Rule for benchmark MSFR
-1. 벤치마크 용 데이터는 Kaggle, Huggingface 오픈소스 데이터셋만 사용하기
+1. 벤치마크 용 데이터는 Kaggle, Huggingface 등에 배보된 오픈소스 데이터셋만 사용하기
 2. 벤치마크 폴더(이 `readme.md` 파일이 존재하는 폴더)에 벤치마크마다 폴더 만들기
 3. 어떤 데이터셋을 사용했는지 `readme.md`를 만들어 라이선스에 맞게 출처 남기기(Jupyter Notebook 사용 시 노트북 파일에 markdown을 사용하여 readme.md 파일을 대신해도 됨)
 4. 상관은 없으나 되도록 아래 템플릿을 따라 작성하기 바람
