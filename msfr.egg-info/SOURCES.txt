@@ -1,7 +1,13 @@
 LICENSE
+MANIFEST.in
 README.md
 pyproject.toml
 setup.py
+MSFR.egg-info/PKG-INFO
+MSFR.egg-info/SOURCES.txt
+MSFR.egg-info/dependency_links.txt
+MSFR.egg-info/requires.txt
+MSFR.egg-info/top_level.txt
 msfr/__init__.py
 msfr/core.py
 msfr.egg-info/PKG-INFO

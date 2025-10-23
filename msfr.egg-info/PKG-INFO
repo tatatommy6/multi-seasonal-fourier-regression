@@ -1,18 +1,19 @@
 Metadata-Version: 2.4
-Name: msfr
-Version: 0.1.0
-Summary: Multi-Seasonal Fourier Regression library
+Name: MSFR
+Version: 1.0.0
+Summary: Python library for multi-seasonal time series regression with Fourier features and smoothing
 Home-page: https://github.com/tatatommy6/multi-seasonal-fourier-regression
-Author: tatatommy6
-Author-email: taejunham1@gmail.com, tatatommy6@naver.com
-License: MIT
+Author: rrayy, tatatommy6
+Author-email: rrayy <taejunham1@gmail.com>, tatatommy6 <tatatommy6@naver.com>
+License: Apache-2.0
 Project-URL: Homepage, https://github.com/tatatommy6/multi-seasonal-fourier-regression
 Project-URL: Repository, https://github.com/tatatommy6/multi-seasonal-fourier-regression
 Project-URL: Issues, https://github.com/tatatommy6/multi-seasonal-fourier-regression/issues
 Requires-Python: >=3.11
 Description-Content-Type: text/markdown
 License-File: LICENSE
-Dynamic: author-email
+Requires-Dist: torch==2.8.0
+Dynamic: author
 Dynamic: home-page
 Dynamic: license-file
 Dynamic: requires-python
