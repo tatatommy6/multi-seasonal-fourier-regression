@@ -1,0 +1,29 @@
+Metadata-Version: 2.4
+Name: msfr
+Version: 0.1.0
+Summary: Multi-Seasonal Fourier Regression library
+Home-page: https://github.com/tatatommy6/multi-seasonal-fourier-regression
+Author: tatatommy6
+Author-email: taejunham1@gmail.com, tatatommy6@naver.com
+License: MIT
+Project-URL: Homepage, https://github.com/tatatommy6/multi-seasonal-fourier-regression
+Project-URL: Repository, https://github.com/tatatommy6/multi-seasonal-fourier-regression
+Project-URL: Issues, https://github.com/tatatommy6/multi-seasonal-fourier-regression/issues
+Requires-Python: >=3.11
+Description-Content-Type: text/markdown
+License-File: LICENSE
+Dynamic: author-email
+Dynamic: home-page
+Dynamic: license-file
+Dynamic: requires-python
+
+# multi-seasonal-fourier-regression (MSFR)
+This is a python library for multi-seasonal time series regression with Fourier features and smoothing.
+
+## About MSFR
+
+MSFR (Multi-Seasonal Fourier Regression) was created to address the limitations of traditional polynomial regression in modeling periodic data.  
+High-order polynomials often lead to overfitting and unstable forecasts, while ignoring the rich seasonal structures present in many real-world time series.  
+
+By incorporating sinusoidal functions as features, MSFR captures both low and high-frequency patterns with fewer parameters,  
+providing smoother and more interpretable forecasts for seasonal and multi-seasonal data.

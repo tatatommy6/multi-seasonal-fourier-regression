@@ -1,45 +1,33 @@
-name: Publish Package
+name: Publish Package (OIDC)
 
 on:
   push:
     tags:
-      - 'v*'  # 버전 태그 감지
+      - "v*"             # v0.1.0 같은 태그 푸시 때만 실행
 
 jobs:
   publish:
     runs-on: ubuntu-latest
+    permissions:
+      id-token: write    # OIDC 필수
+      contents: read
+    environment:
+      name: pypi         # GitHub Environments 이름과 동일
+
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v2
-
-      - name: Set up Python
-        uses: actions/setup-python@v2
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
         with:
-          python-version: '3.11'
+          python-version: "3.11"
 
-      - name: Install dependencies
+      - name: Install build tool
         run: |
-          pip install -r requirements.txt
+          python -m pip install --upgrade pip
+          pip install build
 
-      - name: Build package
-        run: |
-          python -m build
+      - name: Build sdist & wheel
+        run: python -m build
 
-      - name: Publish to PyPI
-        env:
-          TWINE_USERNAME: __token__
-          TWINE_PASSWORD: ${{ secrets.PYPI_API_TOKEN }}
-        run: |
-          python -m twine upload dist/*
-
-      - name: Create GitHub Release
-        uses: softprops/action-gh-release@v1
-        with:
-          tag_name: ${{ github.ref }}
-          name: Release ${{ github.ref }}
-          body: |
-            Release notes for version ${{ github.ref }}
-          files: |
-            dist/*
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Publish to PyPI (OIDC)
+        uses: pypa/gh-action-pypi-publish@release/v1
+        # with: 아무것도 넣지 말 것 (비밀번호/토큰 X)

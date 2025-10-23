@@ -1,0 +1,25 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "MSFR"   # 대문자도 가능하지만, PyPI는 소문자 권장 (필요시 "msfr"로 바꿔도 OK)
+version = "1.0.0"
+description = "Python library for multi-seasonal time series regression with Fourier features and smoothing"
+readme = "README.md"
+requires-python = ">=3.11"
+license = { text = "Apache-2.0" }
+
+authors = [
+  { name = "rrayy", email = "taejunham1@gmail.com" },
+  { name = "tatatommy6", email = "tatatommy6@naver.com" }
+]
+
+dependencies = [
+  "torch==2.8.0"
+]
+
+[project.urls]
+Homepage = "https://github.com/tatatommy6/multi-seasonal-fourier-regression"
+Repository = "https://github.com/tatatommy6/multi-seasonal-fourier-regression"
+Issues = "https://github.com/tatatommy6/multi-seasonal-fourier-regression/issues"

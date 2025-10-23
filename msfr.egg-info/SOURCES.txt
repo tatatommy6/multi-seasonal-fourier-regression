@@ -1,0 +1,10 @@
+LICENSE
+README.md
+pyproject.toml
+setup.py
+msfr/__init__.py
+msfr/core.py
+msfr.egg-info/PKG-INFO
+msfr.egg-info/SOURCES.txt
+msfr.egg-info/dependency_links.txt
+msfr.egg-info/top_level.txt
