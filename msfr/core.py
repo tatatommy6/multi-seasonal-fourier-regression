@@ -9,15 +9,13 @@ class MSFR(nn.Module):
 
     - n_harmonics:주기별 세밀함 정도
     - trend: 계절성 외에 전체 추세 반영 방식
-    - reg_lambda: 정규화 강도
     """
     
-    def __init__(self, input_dim, output_dim, n_harmonics=3, trend=None, reg_lambda=0.0, device=None):
+    def __init__(self, input_dim, output_dim, n_harmonics=3, trend=None, device=None):
         super().__init__()
         self.device = device or torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self.n_harmonics = n_harmonics
         self.trend = trend # 추세는 잠시 사용하지 않기로, 더 알아보고 싶음
-        self.reg_lambda = reg_lambda
 
         # weight 크기 = output_dim x (input_dim * (2*n_harmonics + trend_term))
         trend_dim = input_dim if trend in ["linear", "quadratic"] else 0
@@ -38,3 +36,8 @@ class MSFR(nn.Module):
 
         #TODO: 추세 항 추가 구현
         return features @ self.weight.T + self.bias
+    
+    # 실제 푸리에 급수와 식을 비교한 결과, 우리는 시그마로 더한 값에 전체 가중치를 행렬 곱 하고 있지만, 푸리에 급수는 각 사인/코사인항마다 개별 가중치를 곱하고 더하는 방식임.
+    # 푸리에 급수의 방식을 그대로 따를 것인지, 아니면 지금 방식이 학습에 더 효율적이므로 유지할 것인지 고민 필요.
+    # 정규화를 적용해서 모델 구조 안에 새로 손실함수를 제작해야 하는데, 이 부분은 레이어로써의 MSFR의 역할을 해침
+    # 그래서 지금 방식을 적용하여 약간의 정규화를 준 후, 정규화 역할을 할 수 있는 손실함수를 새로 만드는 방향으로 진행하는 것이 좋아 보임.
