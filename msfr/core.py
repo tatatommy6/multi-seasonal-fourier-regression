@@ -17,20 +17,21 @@ class MSFR(nn.Module):
         self.n_harmonics = n_harmonics
         self.trend = trend # 추세는 잠시 사용하지 않기로, 더 알아보고 싶음
 
-        # weight 크기 = output_dim x (input_dim * (2*n_harmonics + trend_term))
         trend_dim = input_dim if trend in ["linear", "quadratic"] else 0
         total_features = input_dim * (2 * n_harmonics) + trend_dim
 
-        self.weight = Parameter(torch.empty((output_dim, total_features), device=self.device)) #torch.empty()를 이용하여 텐서를 만들기만 하고 아직 채우진 않음
+        self.weight = Parameter(torch.empty((output_dim, total_features), device=self.device))
         self.bias = Parameter(torch.empty(output_dim, device=self.device))
+        self.cycle = Parameter(torch.empty(input_dim, device=self.device))
         nn.init.xavier_uniform_(self.weight) # xavier_uniform_: 입력, 출력 크기 기준으로 가중치 분산을 균형 있게 설정 -> 학습 안정성 향상
         nn.init.zeros_(self.bias) # bias를 0으로 초기화
 
     def forward(self, input: torch.Tensor) -> torch.Tensor:
         x = input.unsqueeze(-1) #x의 shape: (batch_size, input_dim, 1)
         harmonics = torch.arange(1, self.n_harmonics + 1, device=self.device).float()
-        sin_terms = torch.sin(x * harmonics * 2 * math.pi)
-        cos_terms = torch.cos(x * harmonics * 2 * math.pi)
+        
+        sin_terms = torch.sin(x * 2 * math.pi / self.cycle) * harmonics
+        cos_terms = torch.cos(x * 2 * math.pi / self.cycle) * harmonics
         features = torch.cat([sin_terms, cos_terms], dim=-1) #torch.cat() : 여러개의 텐서를 하나로 연결하는 함수 (이때 텐서들의 차원은 다 같아야함)
         features = features.view(features.size(0), -1) #(batch_size, input_dim * 2 * n_harmonics) 형태로 flatten
 
@@ -41,4 +42,8 @@ class MSFR(nn.Module):
     # 푸리에 급수의 방식을 그대로 따를 것인지, 아니면 지금 방식이 학습에 더 효율적이므로 유지할 것인지 고민 필요.
     # 정규화를 적용해서 모델 구조 안에 새로 손실함수를 제작해야 하는데, 이 부분은 레이어로써의 MSFR의 역할을 해침
     # 그래서 지금 방식을 적용하여 약간의 정규화를 준 후, 정규화 역할을 할 수 있는 손실함수를 새로 만드는 방향으로 진행하는 것이 좋아 보임.
-    # 추가: 현재 푸리에 급수 식을 주기가 1/2인 식에서 참고하여 무조건 주기가 1/2만 나옴;; 실수임 몰랐음 그래서 주기 파라미터도 제공하는 게 좋을 것 같음
+
+
+    # 푸리에 급수의 일반항 말고, 계산해서 단순화 시킨 후 torch.arange에 스텝?을 파라미터로 주는 방식으로 개선하면 더 효율적일 수 있음.
+    # 이러면 정규화도 쉽고, 계산량도 줄어들 것 같음.
+    # 더 알아보고 개선하기로, 그리고 여전히 손실함수 새로 제작하는 것도 고려해야 함 
