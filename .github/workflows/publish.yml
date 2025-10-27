@@ -1,5 +1,5 @@
 name: Publish Package (OIDC)
-
+#TODO: 따로 Release 브랜치를 생성해서 pypi 배포까지만 진행할 수 있게 고치기
 on:
   push:
     tags:
