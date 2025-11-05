@@ -13,7 +13,8 @@ class MSFR(nn.Module):
     
     def __init__(self, input_dim, output_dim, n_harmonics=3, trend=None, device=None):
         super().__init__()
-        self.device = device or torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        # self.device = device or torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        self.device = device or torch.device("mps" if torch.backends.mps.is_available() else "cpu")
         self.n_harmonics = n_harmonics
         self.trend = trend # 추세는 잠시 사용하지 않기로, 더 알아보고 싶음
 
@@ -27,13 +28,15 @@ class MSFR(nn.Module):
         nn.init.zeros_(self.bias) # bias를 0으로 초기화
 
     def forward(self, input: torch.Tensor) -> torch.Tensor:
-        x = input.unsqueeze(-1) #x의 shape: (batch_size, input_dim, 1)
-        harmonics = torch.arange(1, self.n_harmonics + 1, device=self.device).float()
-        
-        sin_terms = torch.sin(x * 2 * math.pi / self.cycle) * harmonics
-        print(sin_terms.shape)
-        cos_terms = torch.cos(x * 2 * math.pi / self.cycle) * harmonics
-        print(cos_terms.shape)
+        x = input.unsqueeze(-1) # (batch_size, input_dim, 1)
+        harmonics = torch.arange(1, self.n_harmonics + 1, device=self.device).float()  # (n_harmonics,)
+        # 브로드캐스팅을 위해 차원 정렬
+        harmonics = harmonics.view(1, 1, -1)  # (1, 1, n_harmonics)
+        cycle = self.cycle.view(1, -1, 1)     # (1, input_dim, 1)
+
+        angle = x * (2 * math.pi) * harmonics / cycle  # (batch_size, input_dim, n_harmonics)
+        sin_terms = torch.sin(angle)
+        cos_terms = torch.cos(angle)
         features = torch.cat([sin_terms, cos_terms], dim=-1) #torch.cat() : 여러개의 텐서를 하나로 연결하는 함수 (이때 텐서들의 차원은 다 같아야함)
         features = features.view(features.size(0), -1) #(batch_size, input_dim * 2 * n_harmonics) 형태로 flatten
 
