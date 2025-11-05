@@ -31,7 +31,9 @@ class MSFR(nn.Module):
         harmonics = torch.arange(1, self.n_harmonics + 1, device=self.device).float()
         
         sin_terms = torch.sin(x * 2 * math.pi / self.cycle) * harmonics
+        print(sin_terms.shape)
         cos_terms = torch.cos(x * 2 * math.pi / self.cycle) * harmonics
+        print(cos_terms.shape)
         features = torch.cat([sin_terms, cos_terms], dim=-1) #torch.cat() : 여러개의 텐서를 하나로 연결하는 함수 (이때 텐서들의 차원은 다 같아야함)
         features = features.view(features.size(0), -1) #(batch_size, input_dim * 2 * n_harmonics) 형태로 flatten
 
