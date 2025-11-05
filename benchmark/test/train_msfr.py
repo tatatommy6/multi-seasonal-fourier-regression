@@ -43,7 +43,7 @@ def main():
     parser = argparse.ArgumentParser(description="Train MSFR and optionally save checkpoint")
     parser.add_argument("--save-ckpt", type=str, default=None, help="path to save model state_dict")
     args = parser.parse_args()
-    csv_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "LD2011_2014_converted.csv"))
+    csv_path = "benchmark/test/LD2011_2014_converted.csv"
     if not os.path.exists(csv_path):
         raise FileNotFoundError(f"dataset file not found: {csv_path}")
 
