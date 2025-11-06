@@ -2,7 +2,7 @@ import torch
 import matplotlib.pyplot as plt
 import numpy as np
 import sys, os
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))) # 난 이거 안쓰면 안돌아감
 from benchmark.test.train_msfr import load_dataset, train_val_split, TestModel
 
 HOUSE = 80  # 0~369 중 원하는 가구 인덱스중 원하는거 선택
