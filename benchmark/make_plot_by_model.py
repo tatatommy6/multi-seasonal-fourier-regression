@@ -5,7 +5,8 @@ import sys, os
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))) # 난 이거 안쓰면 안돌아감
 from benchmark.test.train_msfr import load_dataset, train_val_split, TestModel
 
-HOUSE = 80  # 0~369 중 원하는 가구 인덱스중 원하는거 선택
+
+HOUSE = int(input("0 ~ 369: "))  # 귀찮아서 인풋으로 바꿈
 
 CKPT_PATH = "./ckpts/msfr_fixed.ckpt"
 CSV_PATH = "benchmark/test/LD2011_2014_converted.csv"
@@ -55,7 +56,7 @@ plt.ylabel("Value")
 plt.title(f"Household {HOUSE}: Ground Truth (red) vs Prediction (blue)")
 plt.legend()
 plt.grid(True, alpha=0.3)
-plt.savefig("household_comparison.png")
+plt.savefig(f"imgs/{HOUSE}-household_comparison.png")
 plt.show()
-#와 새롭게 안 사실
+# 와 새롭게 안 사실
 # savefig는 show보다 먼저 호출해야함. 무조건!

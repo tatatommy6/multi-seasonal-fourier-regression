@@ -6,6 +6,7 @@ import pandas as pd
 from typing import Tuple
 from msfr import MSFR
 import torch.nn as nn
+from torch.optim.lr_scheduler import LambdaLR # lr 스케줄러
 import matplotlib.pyplot as plt
 import numpy as np
 from torch.utils.data import TensorDataset, DataLoader
@@ -68,6 +69,11 @@ def train_val_split(X: torch.Tensor, y: torch.Tensor, val_ratio: float = 0.1) ->
     split = int(n * (1 - val_ratio))
     return (X[:split], y[:split]), (X[split:], y[split:])
 
+def lr_lambda(epoch):
+    if epoch < 50:
+        return 1.0
+    else:
+        return 0.95 ** (epoch - 50)
 
 def main():
     parser = argparse.ArgumentParser(description="Train MSFR and optionally save checkpoint")
@@ -94,20 +100,29 @@ def main():
     with torch.no_grad():
         init_cycles = torch.tensor([96.0, 96.0 * 7.0, 96.0 * 365.0],dtype=torch.float32, device=device)
         model.msfr.cycle.copy_(init_cycles)
-        print(model.msfr.cycle)
-
 
     train_loader = DataLoader(TensorDataset(X_tr, y_tr), batch_size=512, shuffle=True)
     val_loader = DataLoader(TensorDataset(X_val, y_val), batch_size=1024, shuffle=False)
 
-    optimizer = torch.optim.Adam(model.parameters(), lr=1e-2)
+    optimizer = torch.optim.Adam(model.parameters(), lr=2e-2)
+    scheduler = LambdaLR(optimizer, lr_lambda=lr_lambda) # lr 스케줄러
+    # loss_fn = nn.HuberLoss() # 휴버 고민해봐야함 (개인적인 경험으로 mse, mae보다 낮다고 봄)
     loss_fn = nn.MSELoss()
 
     cycle_hist = []          # [(day, week, year), ...]
     train_mse_hist = []      # [mse_epoch1, mse_epoch2, ...]
     val_mse_hist = []        # [mse_epoch1, mse_epoch2, ...]
+    bias_hist = []
 
-    epochs = 33
+    # 44 ~ 50에폭 쯤 부터 bias의 증가량이 감소하는것이 살짝 보임 따라서 현재 50인 에폭을 70으로 늘려볼 예정
+    # 에폭을 늘려도 과적합 신호가 아직 안옴 반대로 주기가 더 안정화 되면서 원본 데이터 그래프의 개형과 비슷해지는중
+    # 현재까지 과소적합이였다는걸 알 수 있음
+    # ------------
+    # 에폭 70, lr 스케쥴러 on, adam 2e-2 조합과
+    # 에폭 50, lr 스케쥴러 off, adam 2e-2 조합의 성능 비교 결과 0.01의 차이도 없이 똑같음
+    # 지금 상황에선 에폭 50, lr 스케쥴러 off, adam 2e-2 조합이 좋은거 같음
+    # 아래 코드는 에폭 70, lr 스케쥴러 on, adam 2e-2 조합
+    epochs = 70
     for epoch in range(1, epochs + 1):
         model.train()
         total_loss = 0.0
@@ -120,6 +135,8 @@ def main():
             total_loss += loss.item() * xb.size(0)
         train_mse = total_loss / X_tr.size(0)
         train_mse_hist.append(train_mse)
+
+        scheduler.step() # 에폭 끝날 때마다 lr 스케줄러 스텝 호출
 
         cyc = model.msfr.cycle.detach().cpu().numpy()   # (3,)
         cycle_hist.append(cyc)
@@ -136,11 +153,16 @@ def main():
             val_mse_hist.append(val_mse)
         # 에폭 루프의 train/val 출력 바로 위에 추가
         b = model.msfr.bias.detach().cpu()
-        print(f"[Epoch {epoch:02d}] bias mean={b.mean():.3f}, std={b.std():.3f}, "f"min={b.min():.3f}, max={b.max():.3f}")
+        bias_hist = b.numpy().copy()
 
-        print(f"[Epoch {epoch:02d}] cycle:", model.msfr.cycle.detach().cpu().numpy())
-    print(f"[Epoch {epoch:02d}] train MSE: {train_loss:.6f} | val MSE: {val_loss:.6f}")
+        print(f"[Epoch {epoch:02d}] bias mean = {b.mean():.3f}, "f"min = {b.min():.3f}, max = {b.max():.3f}")
+        print(f"lr = {scheduler.get_last_lr()[0]:.6f}")
+        print(f"cycle:", model.msfr.cycle.detach().cpu().numpy())
+        print()
+    # print(f"[Epoch {epoch:02d}] train MSE: {train_loss:.6f} | val MSE: {val_loss:.6f}")
 
+
+# -----------------------검증용 플롯---------------------------
     # 1) cycle 
     import numpy as np
     cycle_hist = np.stack(cycle_hist, axis=0)   
@@ -150,7 +172,10 @@ def main():
     plt.ylabel("Cycle Length")
     plt.title("MSFR Cycle Parameter Evolution")
     plt.legend()
-    plt.grid(True,alpha=0.3)
+    plt.grid(True, alpha=0.3)
+    ymin, ymax = plt.ylim()
+    yticks = np.arange(ymin, ymax, 0.02)  # 간격 조절 : 기존엔 0.005여서 확인이 어려웠던 관계로 0.02로 변경
+    plt.yticks(yticks)
 
     # 2) Train MSE
     fig2 = plt.figure()
@@ -168,22 +193,24 @@ def main():
     plt.title("Validation MSE over epochs")
     plt.grid(True, alpha=0.3)
 
+    fig4 = plt.figure()
+    plt.plot(bias_hist)
+    plt.xlabel("Epoch")
+    plt.ylabel("Bias values")
+    plt.title("Bias Parameter Evolution")
+    plt.grid(True, alpha=0.3)
+
     fig1.savefig("msfr_cycle_evolution.png")
     fig2.savefig("msfr_train_mse.png")
     fig3.savefig("msfr_val_mse.png")
-
-    # 최종 검증 샘플 몇 개 출력
-    with torch.no_grad():
-        sample_pred = model(X_val[:5])
-        print("shape of sample prediction:", tuple(sample_pred.shape))
+    fig4.savefig("msfr_bias_evolution.png")
 
     # 체크포인트 저장 (옵션)
-    if args.save_ckpt is not None:
-        ckpt_path = os.path.abspath(args.save_ckpt)
-        os.makedirs(os.path.dirname(ckpt_path), exist_ok=True)
-        torch.save(model.state_dict(), ckpt_path)
-        print(f"checkpoint saved to: {ckpt_path}")
-
+    # if args.save_ckpt is not None:
+    #     ckpt_path = os.path.abspath(args.save_ckpt)
+    #     os.makedirs(os.path.dirname(ckpt_path), exist_ok=True)
+    #     torch.save(model.state_dict(), ckpt_path)
+    #     print(f"checkpoint saved to: {ckpt_path}")
 
 if __name__ == "__main__":
     main()
