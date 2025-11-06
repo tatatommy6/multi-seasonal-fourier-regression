@@ -2,7 +2,7 @@ import torch
 import math
 import torch.nn as nn
 from torch.nn.parameter import Parameter
-
+torch.nn.Linear
 class MSFR(nn.Module):
     """
     Multi-Seasonal Fourier Regression (MSFR) 레이어 클래스.
@@ -24,8 +24,16 @@ class MSFR(nn.Module):
         self.weight = Parameter(torch.empty((output_dim, total_features), device=self.device))
         self.bias = Parameter(torch.empty(output_dim, device=self.device))
         self.cycle = Parameter(torch.empty(input_dim, device=self.device))
-        nn.init.xavier_uniform_(self.weight) # xavier_uniform_: 입력, 출력 크기 기준으로 가중치 분산을 균형 있게 설정 -> 학습 안정성 향상
-        nn.init.zeros_(self.bias) # bias를 0으로 초기화
+        # nn.init.xavier_uniform_(self.weight) # xavier_uniform_: 입력, 출력 크기 기준으로 가중치 분산을 균형 있게 설정 -> 학습 안정성 향상
+        self.reset_parameters()
+
+    def reset_parameters(self) -> None:
+        # 선형회귀 초기화 방식
+        nn.init.kaiming_uniform_(self.weight, a=math.sqrt(5))
+        fan_in, _ = nn.init._calculate_fan_in_and_fan_out(self.weight)
+        bound = 1 / math.sqrt(fan_in) if fan_in > 0 else 0
+        nn.init.uniform_(self.bias, -bound, bound)
+        nn.init.uniform_(self.cycle, 1.0, 10.0)  # 주기 초기값을 1~10 사이로 설정
 
     def forward(self, input: torch.Tensor) -> torch.Tensor:
         x = input.unsqueeze(-1) # (batch_size, input_dim, 1)
@@ -43,12 +51,3 @@ class MSFR(nn.Module):
         #TODO: 추세 항 추가 구현
         return features @ self.weight.T + self.bias
     
-    # 실제 푸리에 급수와 식을 비교한 결과, 우리는 시그마로 더한 값에 전체 가중치를 행렬 곱 하고 있지만, 푸리에 급수는 각 사인/코사인항마다 개별 가중치를 곱하고 더하는 방식임.
-    # 푸리에 급수의 방식을 그대로 따를 것인지, 아니면 지금 방식이 학습에 더 효율적이므로 유지할 것인지 고민 필요.
-    # 정규화를 적용해서 모델 구조 안에 새로 손실함수를 제작해야 하는데, 이 부분은 레이어로써의 MSFR의 역할을 해침
-    # 그래서 지금 방식을 적용하여 약간의 정규화를 준 후, 정규화 역할을 할 수 있는 손실함수를 새로 만드는 방향으로 진행하는 것이 좋아 보임.
-
-
-    # 푸리에 급수의 일반항 말고, 계산해서 단순화 시킨 후 torch.arange에 스텝(공비, 공차)을 파라미터로 주는 방식으로 개선하면 더 효율적일 수 있음.
-    # 이러면 정규화도 쉽고, 계산량도 줄어들 것 같음.
-    # 더 알아보고 개선하기로, 그리고 여전히 손실함수 새로 제작하는 것도 고려해야 함 

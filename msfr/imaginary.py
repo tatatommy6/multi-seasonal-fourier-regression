@@ -31,7 +31,7 @@ class MSFR(nn.Module):
         x = input.unsqueeze(-1) #x의 shape: (batch_size, input_dim, 1)
         harmonics = torch.arange(-self.n_harmonics-1, self.n_harmonics + 1, device=self.device).float()
 
-        features = torch.exp(x * 2j * math.pi / self.cycle) * harmonics # 파이썬에서는 복소수 표현을 위해 접미사 j 사용
+        features = torch.exp(x * 2j * math.pi * harmonics / self.cycle) # 파이썬에서는 복소수 표현을 위해 접미사 j 사용
         features = features.view(features.size(0), -1) #(batch_size, input_dim * 2 * n_harmonics) 형태로 flatten
 
         #TODO: 추세 항 추가 구현
