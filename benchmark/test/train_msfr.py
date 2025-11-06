@@ -134,6 +134,10 @@ def main():
             val_loss = val_total / X_val.size(0)
             val_mse = val_loss
             val_mse_hist.append(val_mse)
+        # 에폭 루프의 train/val 출력 바로 위에 추가
+        b = model.msfr.bias.detach().cpu()
+        print(f"[Epoch {epoch:02d}] bias mean={b.mean():.3f}, std={b.std():.3f}, "f"min={b.min():.3f}, max={b.max():.3f}")
+
         print(f"[Epoch {epoch:02d}] cycle:", model.msfr.cycle.detach().cpu().numpy())
     print(f"[Epoch {epoch:02d}] train MSE: {train_loss:.6f} | val MSE: {val_loss:.6f}")
 
