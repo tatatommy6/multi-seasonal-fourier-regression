@@ -6,6 +6,8 @@ import pandas as pd
 from typing import Tuple
 from msfr import MSFR
 import torch.nn as nn
+import matplotlib.pyplot as plt
+import numpy as np
 from torch.utils.data import TensorDataset, DataLoader
 
 """
@@ -101,6 +103,10 @@ def main():
     optimizer = torch.optim.Adam(model.parameters(), lr=1e-2)
     loss_fn = nn.MSELoss()
 
+    cycle_hist = []          # [(day, week, year), ...]
+    train_mse_hist = []      # [mse_epoch1, mse_epoch2, ...]
+    val_mse_hist = []        # [mse_epoch1, mse_epoch2, ...]
+
     epochs = 33
     for epoch in range(1, epochs + 1):
         model.train()
@@ -112,8 +118,11 @@ def main():
             loss.backward()
             optimizer.step()
             total_loss += loss.item() * xb.size(0)
-        print(f"[Epoch {epoch:02d}] cycle:", model.msfr.cycle.detach().cpu().numpy())
+        train_mse = total_loss / X_tr.size(0)
+        train_mse_hist.append(train_mse)
 
+        cyc = model.msfr.cycle.detach().cpu().numpy()   # (3,)
+        cycle_hist.append(cyc)
         train_loss = total_loss / X_tr.size(0)
 
         model.eval()
@@ -123,8 +132,41 @@ def main():
                 pred = model(xb)
                 val_total += loss_fn(pred, yb).item() * xb.size(0)
             val_loss = val_total / X_val.size(0)
-
+            val_mse = val_loss
+            val_mse_hist.append(val_mse)
+        print(f"[Epoch {epoch:02d}] cycle:", model.msfr.cycle.detach().cpu().numpy())
     print(f"[Epoch {epoch:02d}] train MSE: {train_loss:.6f} | val MSE: {val_loss:.6f}")
+
+    # 1) cycle 
+    import numpy as np
+    cycle_hist = np.stack(cycle_hist, axis=0)   
+    fig1 = plt.figure(figsize=(10, 6))
+    plt.plot(cycle_hist[:, 0], label="day (≈96)")
+    plt.xlabel("Epochs")
+    plt.ylabel("Cycle Length")
+    plt.title("MSFR Cycle Parameter Evolution")
+    plt.legend()
+    plt.grid(True,alpha=0.3)
+
+    # 2) Train MSE
+    fig2 = plt.figure()
+    plt.plot(train_mse_hist)
+    plt.xlabel("Epoch")
+    plt.ylabel("Train MSE")
+    plt.title("Train MSE over epochs")
+    plt.grid(True, alpha=0.3)
+
+    # 3) Validation MSE
+    fig3 = plt.figure()
+    plt.plot(val_mse_hist)
+    plt.xlabel("Epoch")
+    plt.ylabel("Val MSE")
+    plt.title("Validation MSE over epochs")
+    plt.grid(True, alpha=0.3)
+
+    fig1.savefig("msfr_cycle_evolution.png")
+    fig2.savefig("msfr_train_mse.png")
+    fig3.savefig("msfr_val_mse.png")
 
     # 최종 검증 샘플 몇 개 출력
     with torch.no_grad():
