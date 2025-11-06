@@ -23,7 +23,7 @@ class MSFR(nn.Module):
 
         self.weight = Parameter(torch.empty((output_dim, total_features), device=self.device))
         self.bias = Parameter(torch.empty(output_dim, device=self.device))
-        self.cycle = Parameter(torch.empty(input_dim, device=self.device))
+        self.cycle = Parameter(torch.empty(input_dim, device=self.device)) # 주기를 파라미터화
         # nn.init.xavier_uniform_(self.weight) # xavier_uniform_: 입력, 출력 크기 기준으로 가중치 분산을 균형 있게 설정 -> 학습 안정성 향상
         self.reset_parameters()
 

@@ -32,6 +32,7 @@ MSFR은 이걸 못 잡았다는 건, “cycle은 맞지만 위상이 틀렸거�
 지금 데이터의 사이클은 정확히 적은게 맞음 (92번줄 참고)
 그럼 bias가 없어서 중심이 안맞는다는게 문제
 """
+# 위에쓴건 좀 고민을 해봐야할거 같습니다
 
 class TestModel(nn.Module):
     def __init__(self, input_dim: int, output_dim: int, n_harmonics: int = 10) -> None:
@@ -67,9 +68,9 @@ def train_val_split(X: torch.Tensor, y: torch.Tensor, val_ratio: float = 0.1) ->
 
 
 def main():
-    args = parser.parse_args()
     parser = argparse.ArgumentParser(description="Train MSFR and optionally save checkpoint")
     parser.add_argument("--save-ckpt", type=str, default=None, help="path to save model state_dict")
+    args = parser.parse_args()
     csv_path = "benchmark/test/LD2011_2014_converted.csv"
     if not os.path.exists(csv_path):
         raise FileNotFoundError(f"dataset file not found: {csv_path}")
@@ -89,16 +90,18 @@ def main():
 
     # 주기 파라미터 초기화 (15분 간격): 일 = 96, 주 = 672, 년 ≈ 35040
     with torch.no_grad():
-        init_cycles = torch.tensor([96.0, 96.0 * 7.0, 96.0 * 365.0], dtype=torch.float32, device=device)
-        model.msfr.cycle.data = init_cycles
+        init_cycles = torch.tensor([96.0, 96.0 * 7.0, 96.0 * 365.0],dtype=torch.float32, device=device)
+        model.msfr.cycle.copy_(init_cycles)
+        print(model.msfr.cycle)
+
 
     train_loader = DataLoader(TensorDataset(X_tr, y_tr), batch_size=512, shuffle=True)
     val_loader = DataLoader(TensorDataset(X_val, y_val), batch_size=1024, shuffle=False)
 
-    optimizer = torch.optim.Adam(model.parameters(), lr=1e-3)
+    optimizer = torch.optim.Adam(model.parameters(), lr=1e-2)
     loss_fn = nn.MSELoss()
 
-    epochs = 20
+    epochs = 33
     for epoch in range(1, epochs + 1):
         model.train()
         total_loss = 0.0
@@ -109,6 +112,7 @@ def main():
             loss.backward()
             optimizer.step()
             total_loss += loss.item() * xb.size(0)
+        print(f"[Epoch {epoch:02d}] cycle:", model.msfr.cycle.detach().cpu().numpy())
 
         train_loss = total_loss / X_tr.size(0)
 
@@ -120,7 +124,7 @@ def main():
                 val_total += loss_fn(pred, yb).item() * xb.size(0)
             val_loss = val_total / X_val.size(0)
 
-        print(f"[Epoch {epoch:02d}] train MSE: {train_loss:.6f} | val MSE: {val_loss:.6f}")
+    print(f"[Epoch {epoch:02d}] train MSE: {train_loss:.6f} | val MSE: {val_loss:.6f}")
 
     # 최종 검증 샘플 몇 개 출력
     with torch.no_grad():
