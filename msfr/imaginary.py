@@ -28,10 +28,14 @@ class MSFR(nn.Module):
         nn.init.zeros_(self.bias) # bias를 0으로 초기화
 
     def forward(self, input: torch.Tensor) -> torch.Tensor:
-        x = input.unsqueeze(-1) #x의 shape: (batch_size, input_dim, 1)
+        x = input.unsqueeze(-1) # (batch_size, input_dim, 1)
         harmonics = torch.arange(-self.n_harmonics-1, self.n_harmonics + 1, device=self.device).float()
+        # 브로드캐스팅을 위해 차원 정렬
+        harmonics = harmonics.view(1, 1, -1)  # (1, 1, n_harmonics)
+        cycle = self.cycle.view(1, -1, 1)     # (1, input_dim, 1)
 
-        features = torch.exp(x * 2j * math.pi * harmonics / self.cycle) # 파이썬에서는 복소수 표현을 위해 접미사 j 사용
+        angle = x * (2j * math.pi) * harmonics / cycle  # (batch_size, input_dim, n_harmonics)
+        features = torch.exp(angle)
         features = features.view(features.size(0), -1) #(batch_size, input_dim * 2 * n_harmonics) 형태로 flatten
 
         #TODO: 추세 항 추가 구현
