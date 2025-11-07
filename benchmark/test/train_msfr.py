@@ -70,10 +70,10 @@ def train_val_split(X: torch.Tensor, y: torch.Tensor, val_ratio: float = 0.1) ->
     return (X[:split], y[:split]), (X[split:], y[split:])
 
 def lr_lambda(epoch):
-    if epoch < 50:
+    if epoch < 40:
         return 1.0
     else:
-        return 0.95 ** (epoch - 50)
+        return 0.95 ** (epoch - 40)
 
 def main():
     parser = argparse.ArgumentParser(description="Train MSFR and optionally save checkpoint")
@@ -106,7 +106,7 @@ def main():
 
     optimizer = torch.optim.Adam(model.parameters(), lr=2e-2)
     scheduler = LambdaLR(optimizer, lr_lambda=lr_lambda) # lr 스케줄러
-    # loss_fn = nn.HuberLoss() # 휴버 고민해봐야함 (개인적인 경험으로 mse, mae보다 낮다고 봄)
+    # loss_fn = nn.HuberLoss() # 휴버 고민해봐야함 (개인적인 경험으로 mse, mae보다 낮다고 봄) -> 휴버 써봤는데 별로임 mse로 가자
     loss_fn = nn.MSELoss()
 
     cycle_hist = []          # [(day, week, year), ...]
@@ -122,7 +122,7 @@ def main():
     # 에폭 50, lr 스케쥴러 off, adam 2e-2 조합의 성능 비교 결과 0.01의 차이도 없이 똑같음
     # 지금 상황에선 에폭 50, lr 스케쥴러 off, adam 2e-2 조합이 좋은거 같음
     # 아래 코드는 에폭 70, lr 스케쥴러 on, adam 2e-2 조합
-    epochs = 70
+    epochs = 50
     for epoch in range(1, epochs + 1):
         model.train()
         total_loss = 0.0
@@ -159,7 +159,7 @@ def main():
         print(f"lr = {scheduler.get_last_lr()[0]:.6f}")
         print(f"cycle:", model.msfr.cycle.detach().cpu().numpy())
         print()
-    # print(f"[Epoch {epoch:02d}] train MSE: {train_loss:.6f} | val MSE: {val_loss:.6f}")
+    print(f"[Epoch {epoch:02d}] train MSE: {train_loss:.6f} | val MSE: {val_loss:.6f}")
 
 
 # -----------------------검증용 플롯---------------------------
@@ -206,11 +206,11 @@ def main():
     fig4.savefig("msfr_bias_evolution.png")
 
     # 체크포인트 저장 (옵션)
-    # if args.save_ckpt is not None:
-    #     ckpt_path = os.path.abspath(args.save_ckpt)
-    #     os.makedirs(os.path.dirname(ckpt_path), exist_ok=True)
-    #     torch.save(model.state_dict(), ckpt_path)
-    #     print(f"checkpoint saved to: {ckpt_path}")
+    if args.save_ckpt is not None:
+        ckpt_path = os.path.abspath(args.save_ckpt)
+        os.makedirs(os.path.dirname(ckpt_path), exist_ok=True)
+        torch.save(model.state_dict(), ckpt_path)
+        print(f"checkpoint saved to: {ckpt_path}")
 
 if __name__ == "__main__":
     main()
