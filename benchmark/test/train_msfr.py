@@ -22,7 +22,7 @@ MSFR은 진동만 표현할 수 있고 2000이라는 중심값 자체를 못 맞
 """
 gpt가 그러는데 
 baseline(mean) RMSE 2375, MAE 269
-baseline(seasonal lag=96) RMSE 505, MAE 60
+baseline(seasonal lag = 96) RMSE 505, MAE 60
 -> 이 두 숫자의 차이를 보면,
 
 단순 평균으로도 오차가 2천 정도인데,
@@ -52,14 +52,14 @@ def load_dataset(csv_path: str) -> Tuple[torch.Tensor, torch.Tensor]:
     df = pd.read_csv(csv_path)
 
     # 첫 컬럼이 날짜/인덱스일 가능성에 대비하여 숫자형 컬럼만 타깃으로 사용
-    numeric_cols = df.select_dtypes(include=["number"]).columns.tolist()
+    numeric_cols = df.select_dtypes(include = ["number"]).columns.tolist()
     if len(numeric_cols) == 0:
         raise ValueError("there is no numeric columns in the dataset it must be 370 households")
 
-    y = torch.tensor(df[numeric_cols].values, dtype=torch.float32)
+    y = torch.tensor(df[numeric_cols].values, dtype = torch.float32)
 
     # 15분 간격 정수 시간축 t 생성 (0,1,2,...) → 입력은 [t, t, t]로 3계절성 공유
-    t = torch.arange(y.shape[0], dtype=torch.float32).unsqueeze(1)  # (N, 1)
+    t = torch.arange(y.shape[0], dtype = torch.float32).unsqueeze(1)  # (N, 1)
     X = t.repeat(1, 3)  # (N, 3) = [t, t, t]
     return X, y
 
@@ -76,8 +76,8 @@ def lr_lambda(epoch):
         return 0.95 ** (epoch - 50)
 
 def main():
-    parser = argparse.ArgumentParser(description="Train MSFR and optionally save checkpoint")
-    parser.add_argument("--save-ckpt", type=str, default=None, help="path to save model state_dict")
+    parser = argparse.ArgumentParser(description = "Train MSFR and optionally save checkpoint")
+    parser.add_argument("--save-ckpt", type = str, default = None)
     args = parser.parse_args()
     csv_path = "benchmark/test/LD2011_2014_converted.csv"
     if not os.path.exists(csv_path):
@@ -94,15 +94,16 @@ def main():
     input_dim = X_tr.shape[1]  # 3 (일/주/년 계절성 위한 공유 t)
     output_dim = y_tr.shape[1]  # 370 가구 수
 
-    model = TestModel(input_dim=input_dim, output_dim=output_dim, n_harmonics=3).to(device)
+    model = TestModel(input_dim = input_dim, output_dim = output_dim, n_harmonics = 3).to(device)
 
     # 주기 파라미터 초기화 (15분 간격): 일 = 96, 주 = 672, 년 ≈ 35040
+    # 나중엔 이 초기화값을 없에고도 성능이 좋아야하는데 어떻게 해야할지 고민을 해야함
     with torch.no_grad():
-        init_cycles = torch.tensor([96.0, 96.0 * 7.0, 96.0 * 365.0],dtype=torch.float32, device=device)
+        init_cycles = torch.tensor([96.0, 96.0 * 7.0, 96.0 * 365.0],dtyp = torch.float32, device = device)
         model.msfr.cycle.copy_(init_cycles)
 
-    train_loader = DataLoader(TensorDataset(X_tr, y_tr), batch_size=512, shuffle=True)
-    val_loader = DataLoader(TensorDataset(X_val, y_val), batch_size=1024, shuffle=False)
+    train_loader = DataLoader(TensorDataset(X_tr, y_tr), batch_size = 512, shuffle = True)
+    val_loader = DataLoader(TensorDataset(X_val, y_val), batch_size = 1024, shuffle = False)
 
     optimizer = torch.optim.Adam(model.parameters(), lr=2e-2)
     scheduler = LambdaLR(optimizer, lr_lambda=lr_lambda) # lr 스케줄러
@@ -166,9 +167,9 @@ def main():
 # -----------------------검증용 플롯---------------------------
     # 1) cycle 
     import numpy as np
-    cycle_hist = np.stack(cycle_hist, axis=0)   
-    fig1 = plt.figure(figsize=(10, 6))
-    plt.plot(cycle_hist[:, 0], label="day (≈96)")
+    cycle_hist = np.stack(cycle_hist, axis = 0)   
+    fig1 = plt.figure(figsize = (10, 6))
+    plt.plot(cycle_hist[:, 0], label = "day (≈96)")
     plt.xlabel("Epochs")
     plt.ylabel("Cycle Length")
     plt.title("MSFR Cycle Parameter Evolution")

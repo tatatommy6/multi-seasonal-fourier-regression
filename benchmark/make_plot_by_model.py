@@ -17,11 +17,11 @@ X, y = load_dataset(CSV_PATH)
 
 # 모델 준비
 device = torch.device("mps")
-model = TestModel(input_dim=X_tr.shape[1], output_dim=y_tr.shape[1], n_harmonics=3).to(device)
+model = TestModel(input_dim = X_tr.shape[1], output_dim = y_tr.shape[1], n_harmonics = 3).to(device)
 
 # 주기 초기화 및 가중치 로드
 with torch.no_grad():
-    init_cycles = torch.tensor([96.0, 96.0*7.0, 96.0*365.0], dtype=torch.float32, device=device)
+    init_cycles = torch.tensor([96.0, 96.0 * 7.0, 96.0 * 365.0], dtype = torch.float32, device = device)
     model.msfr.cycle.copy_(init_cycles)
 state = torch.load(CKPT_PATH, map_location=device)
 model.load_state_dict(state)
@@ -49,13 +49,13 @@ y_true = y_true[::STEP]
 y_pred = y_pred[::STEP]
 
 plt.figure(figsize=(8,5))
-plt.scatter(t, y_true, s=20, c="red", label="ground truth")
-plt.scatter(t, y_pred, s=20, c="blue", label="prediction")
+plt.scatter(t, y_true, s = 20, c = "red", label = "ground truth")
+plt.scatter(t, y_pred, s = 20, c = "blue", label = "prediction")
 plt.xlabel("Time (validation steps)")
 plt.ylabel("Value")
 plt.title(f"Household {HOUSE}: Ground Truth (red) vs Prediction (blue)")
 plt.legend()
-plt.grid(True, alpha=0.3)
+plt.grid(True, alpha = 0.3)
 plt.savefig(f"imgs/{HOUSE}-household_comparison.png")
 plt.show()
 # 와 새롭게 안 사실

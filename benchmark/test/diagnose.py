@@ -30,14 +30,14 @@ def compute_metrics(y_true: torch.Tensor, y_pred: torch.Tensor) -> Dict[str, flo
 def per_household_rmse(y_true: torch.Tensor, y_pred: torch.Tensor) -> torch.Tensor:
     # (N, H) -> 각 가구별 RMSE(H,)
     se = (y_pred - y_true) ** 2  # (N, H)
-    mse_h = torch.mean(se, dim=0)  # (H,)
+    mse_h = torch.mean(se, dim = 0)  # (H,)
     rmse_h = torch.sqrt(mse_h)  # (H,)
     return rmse_h
 
 
 def mean_baseline(y_train: torch.Tensor, n_val: int) -> torch.Tensor:
     # 가구별 학습 평균을 그대로 예측
-    mean_per_house = torch.mean(y_train, dim=0, keepdim=True)  # (1, H)
+    mean_per_house = torch.mean(y_train, dim = 0, keepdim = True)  # (1, H)
     return mean_per_house.repeat(n_val, 1)  # (N_val, H)
 
 
@@ -52,14 +52,17 @@ def seasonal_naive_baseline(y_all: torch.Tensor, split: int, lag: int) -> torch.
     return y_all[start:end]  # (N_val, H)
 
 
-def train_model(X_tr: torch.Tensor, y_tr: torch.Tensor, input_dim: int, output_dim: int, device: torch.device, n_harmonics: int, epochs: int, batch_size: int) -> TestModel:
-    model = TestModel(input_dim=input_dim, output_dim=output_dim, n_harmonics=n_harmonics).to(device)
+def train_model(X_tr: torch.Tensor, y_tr: torch.Tensor, input_dim: int, 
+                output_dim: int, device: torch.device, n_harmonics: int,
+                epochs: int, batch_size: int) -> TestModel:
+    
+    model = TestModel(input_dim = input_dim, output_dim = output_dim, n_harmonics = n_harmonics).to(device)
     # 주기 초기화(15분 단위: 일/주/년)
     with torch.no_grad():
-        init_cycles = torch.tensor([96.0, 96.0 * 7.0, 96.0 * 365.0], dtype=torch.float32, device=device)
+        init_cycles = torch.tensor([96.0, 96.0 * 7.0, 96.0 * 365.0], dtype = torch.float32, device=device)
         model.msfr.cycle.data = init_cycles
 
-    train_loader = DataLoader(TensorDataset(X_tr, y_tr), batch_size=batch_size, shuffle=True)
+    train_loader = DataLoader(TensorDataset(X_tr, y_tr), batch_size = batch_size, shuffle = True)
     optimizer = torch.optim.Adam(model.parameters(), lr=1e-3)
     loss_fn = nn.MSELoss()
 
@@ -71,7 +74,6 @@ def train_model(X_tr: torch.Tensor, y_tr: torch.Tensor, input_dim: int, output_d
             loss = loss_fn(pred, yb)
             loss.backward()
             optimizer.step()
-
     return model
 
 def main():
@@ -95,11 +97,11 @@ def main():
     model = None
     if CKPT_PATH is not None:
         # 체크포인트 로드하여 평가만 수행
-        model = TestModel(input_dim=input_dim, output_dim=output_dim, n_harmonics=N_HARMONICS).to(device)
+        model = TestModel(input_dim = input_dim, output_dim = output_dim, n_harmonics = N_HARMONICS).to(device)
         with torch.no_grad():
-            init_cycles = torch.tensor([96.0, 96.0 * 7.0, 96.0 * 365.0], dtype=torch.float32, device=device)
+            init_cycles = torch.tensor([96.0, 96.0 * 7.0, 96.0 * 365.0], dtype = torch.float32, device=device)
             model.msfr.cycle.data = init_cycles
-        state = torch.load(CKPT_PATH, map_location=device)
+        state = torch.load(CKPT_PATH, map_location = device)
         model.load_state_dict(state)
         model.eval()
     elif args.no_train:
@@ -115,22 +117,22 @@ def main():
     val_metrics = compute_metrics(y_val, pred_val)
     rmse_h = per_household_rmse(y_val, pred_val).detach().cpu()
 
-    print(f"model | train RMSE={train_metrics['rmse']:.3f}, val RMSE={val_metrics['rmse']:.3f}, val MAE={val_metrics['mae']:.3f}")
-    print(f"per-household RMSE | mean={rmse_h.mean().item():.3f}, median={rmse_h.median().item():.3f}, min={rmse_h.min().item():.3f}, max={rmse_h.max().item():.3f}")
+    print(f"model | train RMSE = {train_metrics['rmse']:.3f}, val RMSE = {val_metrics['rmse']:.3f}, val MAE = {val_metrics['mae']:.3f}")
+    print(f"per-household RMSE | mean = {rmse_h.mean().item():.3f}, median = {rmse_h.median().item():.3f}, min = {rmse_h.min().item():.3f}, max = {rmse_h.max().item():.3f}")
 
     # 베이스라인 비교
     with torch.no_grad():
         mean_pred = mean_baseline(y_tr, n_val=y_val.shape[0])
         mean_pred = mean_pred.to(device)
         mean_metrics = compute_metrics(y_val, mean_pred)
-    print(f"baseline(mean) | val RMSE={mean_metrics['rmse']:.3f}, val MAE={mean_metrics['mae']:.3f}")
+    print(f"baseline(mean) | val RMSE = {mean_metrics['rmse']:.3f}, val MAE = {mean_metrics['mae']:.3f}")
 
     try:
         split = X_tr.shape[0]
         seasonal_pred = seasonal_naive_baseline(torch.cat([y_tr, y_val], dim=0), split=split, lag=SEASONAL_LAG)
         seasonal_pred = seasonal_pred.to(device)
         seasonal_metrics = compute_metrics(y_val, seasonal_pred)
-        print(f"baseline(seasonal naive, lag={SEASONAL_LAG}) | val RMSE={seasonal_metrics['rmse']:.3f}, val MAE={seasonal_metrics['mae']:.3f}")
+        print(f"baseline(seasonal naive, lag = {SEASONAL_LAG}) | val RMSE = {seasonal_metrics['rmse']:.3f}, val MAE = {seasonal_metrics['mae']:.3f}")
     except ValueError as e:
         print(f"skipped baseline(seasonal lag): {e}")
 
