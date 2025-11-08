@@ -99,7 +99,7 @@ def main():
     # 주기 파라미터 초기화 (15분 간격): 일 = 96, 주 = 672, 년 ≈ 35040
     # 나중엔 이 초기화값을 없에고도 성능이 좋아야하는데 어떻게 해야할지 고민을 해야함
     with torch.no_grad():
-        init_cycles = torch.tensor([96.0, 96.0 * 7.0, 96.0 * 365.0],dtyp = torch.float32, device = device)
+        init_cycles = torch.tensor([96.0, 96.0 * 7.0, 96.0 * 365.0], dtype = torch.float32, device = device)
         model.msfr.cycle.copy_(init_cycles)
 
     train_loader = DataLoader(TensorDataset(X_tr, y_tr), batch_size = 512, shuffle = True)
