@@ -106,7 +106,7 @@ def main():
 
     optimizer = torch.optim.Adam(model.parameters(), lr=2e-2)
     scheduler = LambdaLR(optimizer, lr_lambda=lr_lambda) # lr 스케줄러
-    # loss_fn = nn.HuberLoss() # 휴버 고민해봐야함 (개인적인 경험으로 mse, mae보다 낮다고 봄)
+    # loss_fn = nn.HuberLoss() # 휴버 고민해봐야함 (개인적인 경험으로 mse, mae보다 낮다고 봄) -> 써봤는데 mse가 나음
     loss_fn = nn.MSELoss()
 
     cycle_hist = []          # [(day, week, year), ...]
@@ -122,7 +122,7 @@ def main():
     # 에폭 50, lr 스케쥴러 off, adam 2e-2 조합의 성능 비교 결과 0.01의 차이도 없이 똑같음
     # 지금 상황에선 에폭 50, lr 스케쥴러 off, adam 2e-2 조합이 좋은거 같음
     # 아래 코드는 에폭 70, lr 스케쥴러 on, adam 2e-2 조합
-    epochs = 70
+    epochs = 10
     for epoch in range(1, epochs + 1):
         model.train()
         total_loss = 0.0
@@ -135,12 +135,12 @@ def main():
             total_loss += loss.item() * xb.size(0)
         train_mse = total_loss / X_tr.size(0)
         train_mse_hist.append(train_mse)
-
         scheduler.step() # 에폭 끝날 때마다 lr 스케줄러 스텝 호출
 
+        # 주기 그래프용
         cyc = model.msfr.cycle.detach().cpu().numpy()   # (3,)
         cycle_hist.append(cyc)
-        train_loss = total_loss / X_tr.size(0)
+        # train_loss = total_loss / X_tr.size(0)
 
         model.eval()
         with torch.no_grad():
@@ -151,9 +151,10 @@ def main():
             val_loss = val_total / X_val.size(0)
             val_mse = val_loss
             val_mse_hist.append(val_mse)
-        # 에폭 루프의 train/val 출력 바로 위에 추가
-        b = model.msfr.bias.detach().cpu()
-        bias_hist = b.numpy().copy()
+
+        # 바이어스 그래프용
+        b = model.msfr.bias.detach().cpu().numpy()
+        bias_hist.append(b.mean())
 
         print(f"[Epoch {epoch:02d}] bias mean = {b.mean():.3f}, "f"min = {b.min():.3f}, max = {b.max():.3f}")
         print(f"lr = {scheduler.get_last_lr()[0]:.6f}")
@@ -197,7 +198,7 @@ def main():
     plt.plot(bias_hist)
     plt.xlabel("Epoch")
     plt.ylabel("Bias values")
-    plt.title("Bias Parameter Evolution")
+    plt.title("Bias Parameter Evolution (mean)")
     plt.grid(True, alpha=0.3)
 
     fig1.savefig("msfr_cycle_evolution.png")
@@ -206,11 +207,11 @@ def main():
     fig4.savefig("msfr_bias_evolution.png")
 
     # 체크포인트 저장 (옵션)
-    # if args.save_ckpt is not None:
-    #     ckpt_path = os.path.abspath(args.save_ckpt)
-    #     os.makedirs(os.path.dirname(ckpt_path), exist_ok=True)
-    #     torch.save(model.state_dict(), ckpt_path)
-    #     print(f"checkpoint saved to: {ckpt_path}")
+    if args.save_ckpt is not None:
+        ckpt_path = os.path.abspath(args.save_ckpt)
+        os.makedirs(os.path.dirname(ckpt_path), exist_ok=True)
+        torch.save(model.state_dict(), ckpt_path)
+        print(f"checkpoint saved to: {ckpt_path}")
 
 if __name__ == "__main__":
     main()

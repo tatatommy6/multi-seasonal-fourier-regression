@@ -50,4 +50,3 @@ class MSFR(nn.Module):
 
         #TODO: 추세 항 추가 구현
         return features @ self.weight.T + self.bias
-    

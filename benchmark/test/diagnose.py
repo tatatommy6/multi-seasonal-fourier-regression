@@ -12,7 +12,6 @@ from benchmark.test.train_msfr import load_dataset, train_val_split, TestModel
 비교 모델: MSFR (Multi-Seasonal Fourier Regression), 단순 평균 베이스라인, 계절성 나이브 베이스라인
 데이터셋: LD2011_2014_converted.csv (15분 단위 전력 소비량 데이터)
 평가 메트릭: RMSE, MAE -> huber 
-
 """
 
 CSV_PATH = "benchmark/test/LD2011_2014_converted.csv"
@@ -74,7 +73,6 @@ def train_model(X_tr: torch.Tensor, y_tr: torch.Tensor, input_dim: int, output_d
             optimizer.step()
 
     return model
-
 
 def main():
     parser = argparse.ArgumentParser()
