@@ -9,9 +9,9 @@ from typing import Tuple, Dict
 from benchmark.test.train_msfr import load_dataset, train_val_split, TestModel
 
 """
-비교 모델: MSFR (Multi-Seasonal Fourier Regression), 단순 평균 베이스라인, 계절성 나이브 베이스라인
-데이터셋: LD2011_2014_converted.csv (15분 단위 전력 소비량 데이터)
-평가 메트릭: RMSE, MAE -> huber 
+comparison model: MSFR (Multi-Seasonal Fourier Regression), 단순 평균 베이스라인(mean), 계절성 나이브 베이스라인(seasonal naive)
+dataset: LD2011_2014_converted.csv (15-minute power consumption data)
+Evaluation Metrics: RMSE, MAE -> huber -> revert to (rmse, mae)
 """
 
 CSV_PATH = "benchmark/test/LD2011_2014_converted.csv"
@@ -26,7 +26,6 @@ def compute_metrics(y_true: torch.Tensor, y_pred: torch.Tensor) -> Dict[str, flo
     mae = torch.mean(torch.abs(y_pred - y_true)).item()
     return {"mse": mse, "rmse": rmse, "mae": mae}
 
-
 def per_household_rmse(y_true: torch.Tensor, y_pred: torch.Tensor) -> torch.Tensor:
     # (N, H) -> 각 가구별 RMSE(H,)
     se = (y_pred - y_true) ** 2  # (N, H)
@@ -34,12 +33,10 @@ def per_household_rmse(y_true: torch.Tensor, y_pred: torch.Tensor) -> torch.Tens
     rmse_h = torch.sqrt(mse_h)  # (H,)
     return rmse_h
 
-
 def mean_baseline(y_train: torch.Tensor, n_val: int) -> torch.Tensor:
     # 가구별 학습 평균을 그대로 예측
     mean_per_house = torch.mean(y_train, dim = 0, keepdim = True)  # (1, H)
     return mean_per_house.repeat(n_val, 1)  # (N_val, H)
-
 
 def seasonal_naive_baseline(y_all: torch.Tensor, split: int, lag: int) -> torch.Tensor:
     # 검증 구간의 각 시점 t에 대해 t-lag 시점의 값을 그대로 예측
@@ -51,36 +48,7 @@ def seasonal_naive_baseline(y_all: torch.Tensor, split: int, lag: int) -> torch.
     end = start + n_val
     return y_all[start:end]  # (N_val, H)
 
-
-def train_model(X_tr: torch.Tensor, y_tr: torch.Tensor, input_dim: int, 
-                output_dim: int, device: torch.device, n_harmonics: int,
-                epochs: int, batch_size: int) -> TestModel:
-    
-    model = TestModel(input_dim = input_dim, output_dim = output_dim, n_harmonics = n_harmonics).to(device)
-    # 주기 초기화(15분 단위: 일/주/년)
-    with torch.no_grad():
-        init_cycles = torch.tensor([96.0, 96.0 * 7.0, 96.0 * 365.0], dtype = torch.float32, device=device)
-        model.msfr.cycle.data = init_cycles
-
-    train_loader = DataLoader(TensorDataset(X_tr, y_tr), batch_size = batch_size, shuffle = True)
-    optimizer = torch.optim.Adam(model.parameters(), lr=1e-3)
-    loss_fn = nn.MSELoss()
-
-    for _ in range(epochs):
-        model.train()
-        for xb, yb in train_loader:
-            optimizer.zero_grad(set_to_none=True)
-            pred = model(xb)
-            loss = loss_fn(pred, yb)
-            loss.backward()
-            optimizer.step()
-    return model
-
 def main():
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--no-train", action="store_true", help="skip training and only evaluate")
-    args = parser.parse_args()
-
     if not os.path.exists(CSV_PATH):
         raise FileNotFoundError(f"cannot find data file: {CSV_PATH}")
 
@@ -104,9 +72,9 @@ def main():
         state = torch.load(CKPT_PATH, map_location = device)
         model.load_state_dict(state)
         model.eval()
-    elif args.no_train:
-        raise ValueError("'--no-train' was saved but you don`t have '--ckpt' path. If you only want to perform the evaluation, provide the '--ckpt' option. ")
-
+    else:
+        raise ValueError("The variable 'CKPT_PATH' is not defined. you need to have a pretrained model to evaluate.")
+    
     # 모델 예측 및 핵심 메트릭
     model.eval()
     with torch.no_grad():
@@ -135,7 +103,6 @@ def main():
         print(f"baseline(seasonal naive, lag = {SEASONAL_LAG}) | val RMSE = {seasonal_metrics['rmse']:.3f}, val MAE = {seasonal_metrics['mae']:.3f}")
     except ValueError as e:
         print(f"skipped baseline(seasonal lag): {e}")
-
 
 if __name__ == "__main__":
     main()
