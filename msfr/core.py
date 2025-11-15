@@ -10,6 +10,8 @@ class MSFR(nn.Module):
     - n_harmonics:주기별 세밀함 정도
     - trend: 계절성 외에 전체 추세 반영 방식
     """
+
+    # TODO: 초기 주기를 입력받는 아이디어에 대해 생각, 주석이 너무 많아 복잡해보임 -> 정리 필요
     
     def __init__(self, input_dim, output_dim, n_harmonics=3, trend=None, device=None):
         super().__init__()

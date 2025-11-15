@@ -24,8 +24,15 @@ class MSFR(nn.Module):
         self.weight = Parameter(torch.empty((output_dim, total_features), device=self.device))
         self.bias = Parameter(torch.empty(output_dim, device=self.device))
         self.cycle = Parameter(torch.empty(input_dim, device=self.device))
-        nn.init.xavier_uniform_(self.weight) # xavier_uniform_: 입력, 출력 크기 기준으로 가중치 분산을 균형 있게 설정 -> 학습 안정성 향상
-        nn.init.zeros_(self.bias) # bias를 0으로 초기화
+        self.reset_parameters()
+
+    def reset_parameters(self) -> None:
+        # 선형회귀 초기화 방식
+        nn.init.xavier_uniform_(self.weight, gain=2.0)
+        fan_in, _ = nn.init._calculate_fan_in_and_fan_out(self.weight)
+        bound = 1 / math.sqrt(fan_in) if fan_in > 0 else 0
+        nn.init.uniform_(self.bias, -bound, bound)
+        nn.init.uniform_(self.cycle, 1.0, 10.0)  # 주기 초기값을 1~10 사이로 설정
 
     def forward(self, input: torch.Tensor) -> torch.Tensor:
         x = input.unsqueeze(-1) # (batch_size, input_dim, 1)
