@@ -27,16 +27,16 @@ class MSFR(nn.Module):
         self.cycle = Parameter(torch.empty(input_dim, device=device))
         self.reset_parameters()
         
-    def reset_parameters(self) -> None:
-        nn.init.xavier_uniform_(self.weight, gain=0.2)  # gain 값 감소
+    def reset_parameters(self): # 선형회귀 초기화 + 주기값 초기화
+        nn.init.kaiming_uniform_(self.weight, a=math.sqrt(5))
         fan_in, _ = nn.init._calculate_fan_in_and_fan_out(self.weight)
         bound = 1.0 / math.sqrt(max(1, fan_in))
         nn.init.uniform_(self.bias, -bound, bound)
-        nn.init.uniform_(self.cycle, 5.0, 8.0)
+        nn.init.uniform_(self.cycle, 0.5, 10.0)
 
     def forward(self, input: torch.Tensor) -> torch.Tensor:
         harmonics = torch.arange(1, self.n_harmonics + 1, device=input.device).float()  # (n_harmonics,)
-        cycles = F.softplus(self.cycle) + 1e-3 # 주기 양수화
+        cycles = torch.exp(self.cycle * 0.5) + 1e-3 # 주기 양수화 (exp로 민감하게 반응)
 
         # 브로드캐스팅을 위해 차원 정렬
         x = input.unsqueeze(-1)                # (batch_size, input_dim, 1)
