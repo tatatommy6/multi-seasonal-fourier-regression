@@ -105,7 +105,7 @@ def main():
     train_loader = DataLoader(TensorDataset(X_tr, y_tr), batch_size = 512, shuffle = True)
     val_loader = DataLoader(TensorDataset(X_val, y_val), batch_size = 1024, shuffle = False)
 
-    optimizer = torch.optim.Adam(model.parameters(), lr=2e-2)
+    optimizer = torch.optim.Adam(model.parameters(), lr=5e-2)
     scheduler = LambdaLR(optimizer, lr_lambda=lr_lambda) # lr 스케줄러
     # loss_fn = nn.HuberLoss() # 휴버 고민해봐야함 (개인적인 경험으로 mse, mae보다 낮다고 봄) -> 써봤는데 mse가 나음
     loss_fn = nn.MSELoss()
@@ -123,7 +123,7 @@ def main():
     # 에폭 50, lr 스케쥴러 off, adam 2e-2 조합의 성능 비교 결과 0.01의 차이도 없이 똑같음
     # 지금 상황에선 에폭 50, lr 스케쥴러 off, adam 2e-2 조합이 좋은거 같음
     # 아래 코드는 에폭 70, lr 스케쥴러 on, adam 2e-2 조합
-    epochs = 10
+    epochs = 50
     for epoch in range(1, epochs + 1):
         model.train()
         total_loss = 0.0

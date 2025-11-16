@@ -36,7 +36,8 @@ class MSFR(nn.Module):
 
     def forward(self, input: torch.Tensor) -> torch.Tensor:
         harmonics = torch.arange(1, self.n_harmonics + 1, device=input.device).float()  # (n_harmonics,)
-        cycles = torch.exp(self.cycle * 0.5) + 1e-3 # 주기 양수화 (exp로 민감하게 반응)
+        # cycles = torch.exp(self.cycle * 0.5) + 1e-3 # 주기 양수화 (exp로 민감하게 반응)
+        cycles = F.softplus(self.cycle) + 1e-3
 
         # 브로드캐스팅을 위해 차원 정렬
         x = input.unsqueeze(-1)                # (batch_size, input_dim, 1)
