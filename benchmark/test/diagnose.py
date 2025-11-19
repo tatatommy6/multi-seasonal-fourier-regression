@@ -15,7 +15,7 @@ Evaluation Metrics: RMSE, MAE -> huber -> revert to (rmse, mae)
 """
 
 CSV_PATH = "benchmark/test/LD2011_2014_converted.csv"
-N_HARMONICS = 3
+N_HARMONICS = 12
 VAL_RATIO = 0.1
 SEASONAL_LAG = 96
 CKPT_PATH = "./ckpts/msfr_fixed.ckpt"

@@ -6,3 +6,4 @@ dist
 build
 *.egg-info
 .ipynb_checkpoints
+LD2011_2014_converted.csv

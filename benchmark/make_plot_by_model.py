@@ -17,7 +17,7 @@ X, y = load_dataset(CSV_PATH)
 
 # 모델 준비
 device = torch.device("mps")
-model = TestModel(input_dim = X_tr.shape[1], output_dim = y_tr.shape[1], n_harmonics = 3).to(device)
+model = TestModel(input_dim = X_tr.shape[1], output_dim = y_tr.shape[1], n_harmonics = 12).to(device)
 
 # 주기 초기화 및 가중치 로드
 with torch.no_grad():

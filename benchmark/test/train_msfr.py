@@ -38,7 +38,7 @@ MSFR은 이걸 못 잡았다는 건, “cycle은 맞지만 위상이 틀렸거�
 # 위에쓴건 좀 고민을 해봐야할거 같습니다
 
 class TestModel(nn.Module):
-    def __init__(self, input_dim: int, output_dim: int, n_harmonics: int = 10) -> None:
+    def __init__(self, input_dim: int, output_dim: int, n_harmonics: int = 12) -> None:
         super().__init__()
         self.msfr = MSFR(input_dim = input_dim, 
         output_dim = output_dim, 
@@ -70,10 +70,10 @@ def train_val_split(X: torch.Tensor, y: torch.Tensor, val_ratio: float = 0.1) ->
     return (X[:split], y[:split]), (X[split:], y[split:])
 
 def lr_lambda(epoch):
-    if epoch < 40:
+    if epoch < 80:
         return 1.0
     else:
-        return 0.95 ** (epoch - 50)
+        return 0.95 ** (epoch - 80)
 
 def main():
     parser = argparse.ArgumentParser(description = "Train MSFR and optionally save checkpoint")
@@ -94,7 +94,7 @@ def main():
     input_dim = X_tr.shape[1]  # 3 (일/주/년 계절성 위한 공유 t)
     output_dim = y_tr.shape[1]  # 370 가구 수
 
-    model = TestModel(input_dim = input_dim, output_dim = output_dim, n_harmonics = 3).to(device)
+    model = TestModel(input_dim = input_dim, output_dim = output_dim, n_harmonics = 12).to(device)
 
     # 주기 파라미터 초기화 (15분 간격): 일 = 96, 주 = 672, 년 ≈ 35040
     # 나중엔 이 초기화값을 없에고도 성능이 좋아야하는데 어떻게 해야할지 고민을 해야함
@@ -107,7 +107,6 @@ def main():
 
     optimizer = torch.optim.Adam(model.parameters(), lr=5e-2)
     scheduler = LambdaLR(optimizer, lr_lambda=lr_lambda) # lr 스케줄러
-    # loss_fn = nn.HuberLoss() # 휴버 고민해봐야함 (개인적인 경험으로 mse, mae보다 낮다고 봄) -> 써봤는데 mse가 나음
     loss_fn = nn.MSELoss()
 
     cycle_hist = []          # [(day, week, year), ...]
