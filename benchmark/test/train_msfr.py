@@ -70,7 +70,7 @@ def train_val_split(X: torch.Tensor, y: torch.Tensor, val_ratio: float = 0.1) ->
     return (X[:split], y[:split]), (X[split:], y[split:])
 
 def lr_lambda(epoch):
-    if epoch < 50:
+    if epoch < 40:
         return 1.0
     else:
         return 0.95 ** (epoch - 50)
