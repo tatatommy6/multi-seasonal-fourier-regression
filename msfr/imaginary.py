@@ -1,12 +1,12 @@
-# 복소 범위에서 MSFR을 구현해서 성능을 비교해보자
 import torch
 import math
 import torch.nn as nn
+import torch.nn.functional as F
 from torch.nn.parameter import Parameter
 
 class MSFR(nn.Module):
     """
-    Multi-Seasonal Fourier Regression (MSFR) 레이어 클래스.
+    Multi-Seasonal Fourier Regression (MSFR) 레이어 클래스 (복소수 버전).
 
     - n_harmonics:주기별 세밀함 정도
     - trend: 계절성 외에 전체 추세 반영 방식
@@ -35,13 +35,15 @@ class MSFR(nn.Module):
         nn.init.uniform_(self.cycle, 1.0, 10.0)  # 주기 초기값을 1~10 사이로 설정
 
     def forward(self, input: torch.Tensor) -> torch.Tensor:
-        x = input.unsqueeze(-1) # (batch_size, input_dim, 1)
-        harmonics = torch.arange(-self.n_harmonics-1, self.n_harmonics + 1, device=self.device).float()
-        # 브로드캐스팅을 위해 차원 정렬
-        harmonics = harmonics.view(1, 1, -1)  # (1, 1, n_harmonics)
-        cycle = self.cycle.view(1, -1, 1)     # (1, input_dim, 1)
+        harmonics = torch.arange(1, self.n_harmonics + 1, device=input.device).float()  # (n_harmonics,)
+        cycles = F.softplus(self.cycle) + 1e-3
 
-        angle = x * (2j * math.pi) * harmonics / cycle  # (batch_size, input_dim, n_harmonics)
+        # 브로드캐스팅을 위해 차원 정렬
+        x = input.unsqueeze(-1)                # (batch_size, input_dim, 1)
+        harmonics = harmonics.view(1, 1, -1)    # (1, 1, n_harmonics)
+        cycle = cycles.view(1, -1, 1)           # (1, input_dim, 1)
+
+        angle = x * (2 * math.pi) * harmonics / cycle  # (batch_size, input_dim, n_harmonics)
         features = torch.exp(angle)
         features = features.view(features.size(0), -1) #(batch_size, input_dim * 2 * n_harmonics) 형태로 flatten
 
