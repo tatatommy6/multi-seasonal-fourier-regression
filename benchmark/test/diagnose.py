@@ -18,7 +18,7 @@ CSV_PATH = "benchmark/test/LD2011_2014_converted.csv"
 N_HARMONICS = 12
 VAL_RATIO = 0.1
 SEASONAL_LAG = 96
-CKPT_PATH = "./ckpts/msfr_fixed.ckpt"
+CKPT_PATH = "./model/msfr_fixed.ckpt"
 
 def compute_metrics(y_true: torch.Tensor, y_pred: torch.Tensor) -> Dict[str, float]:
     mse = torch.mean((y_pred - y_true) ** 2).item()

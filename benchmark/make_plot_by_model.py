@@ -8,7 +8,7 @@ from benchmark.test.train_msfr import load_dataset, train_val_split, TestModel
 
 HOUSE = int(input("0 ~ 369: "))  # 귀찮아서 인풋으로 바꿈
 
-CKPT_PATH = "./ckpts/msfr_fixed.ckpt"
+CKPT_PATH = "./model/msfr_fixed.ckpt"
 CSV_PATH = "benchmark/test/LD2011_2014_converted.csv"
 
 # 데이터 불러오기

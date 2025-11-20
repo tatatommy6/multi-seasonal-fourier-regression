@@ -1,4 +1,4 @@
-#how to 실행 : root directory에서 python -m benchmark.test.train_msfr --save-ckpt ./ckpts/msfr_fixed.ckpt
+#how to 실행 : root directory에서 python -m benchmark.test.train_msfr --save-ckpt ./model/msfr_fixed.ckpt
 import os
 import argparse
 import torch
