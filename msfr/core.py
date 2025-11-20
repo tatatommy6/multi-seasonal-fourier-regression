@@ -28,14 +28,14 @@ class MSFR(nn.Module):
         self.cycle = Parameter(torch.empty(input_dim, device=device))
         self.reset_parameters(init_cycle) # type: ignore
         
-    def reset_parameters(self, init_cylce:torch.Tensor): # 선형회귀 초기화 + 주기값 초기화
+    def reset_parameters(self, init_cycle:torch.Tensor): # 선형회귀 초기화 + 주기값 초기화
         nn.init.kaiming_uniform_(self.weight, a=math.sqrt(5))
         fan_in, _ = nn.init._calculate_fan_in_and_fan_out(self.weight)
         bound = 1.0 / math.sqrt(max(1, fan_in))
         nn.init.uniform_(self.bias, -bound, bound)
         nn.init.uniform_(self.cycle, 0.5, 10.0)
-        if init_cylce is not None:
-            self.cycle.data = init_cylce
+        if init_cycle is not None:
+            self.cycle.data = init_cycle
 
     def forward(self, input: torch.Tensor) -> torch.Tensor:
         harmonics = torch.arange(1, self.n_harmonics + 1, device=input.device).float()  # (n_harmonics,)
