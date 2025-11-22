@@ -8,7 +8,6 @@ from msfr import MSFR
 import torch.nn as nn
 from torch.optim.lr_scheduler import LambdaLR # lr 스케줄러
 import matplotlib.pyplot as plt
-import numpy as np
 from torch.utils.data import TensorDataset, DataLoader
 
 class TestModel(nn.Module):
@@ -174,7 +173,7 @@ def main():
         print(f"lr = {scheduler.get_last_lr()[0]:.6f}")
         print(f"cycle:", model.msfr.cycle.detach().cpu().numpy())
         print()
-        make_plots(cycle_hist, train_mse_hist, val_mse_hist, bias_hist, args, model)
+    make_plots(cycle_hist, train_mse_hist, val_mse_hist, bias_hist, args, model)
     # print(f"[Epoch {epoch:02d}] train MSE: {train_loss:.6f} | val MSE: {val_loss:.6f}")
 
 if __name__ == "__main__":
