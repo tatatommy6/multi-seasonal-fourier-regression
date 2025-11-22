@@ -21,7 +21,6 @@ class TestModel(nn.Module):
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         return self.msfr(x)
 
-
 def load_dataset(csv_path: str) -> Tuple[torch.Tensor, torch.Tensor]:
     df = pd.read_csv(csv_path)
 
@@ -37,7 +36,6 @@ def load_dataset(csv_path: str) -> Tuple[torch.Tensor, torch.Tensor]:
     X = t.repeat(1, 3)  # (N, 3) = [t, t, t]
     return X, y
 
-
 def train_val_split(X: torch.Tensor, y: torch.Tensor, val_ratio: float = 0.1) -> Tuple[Tuple[torch.Tensor, torch.Tensor], Tuple[torch.Tensor, torch.Tensor]]:
     n = X.shape[0]
     split = int(n * (1 - val_ratio))
@@ -48,6 +46,57 @@ def lr_lambda(epoch):
         return 1.0
     else:
         return 0.95 ** (epoch - 70)
+
+def make_plots(cycle_hist, train_mse_hist, val_mse_hist, bias_hist, args, model):
+    # 1) cycle 
+    import numpy as np
+    cycle_hist = np.stack(cycle_hist, axis = 0)   
+    fig1 = plt.figure(figsize = (10, 6))
+    plt.plot(cycle_hist[:, 0], label = "day (≈96)")
+    plt.xlabel("Epochs")
+    plt.ylabel("Cycle Length")
+    plt.title("MSFR Cycle Parameter Evolution")
+    plt.legend()
+    plt.grid(True, alpha=0.3)
+    ymin, ymax = plt.ylim()
+    yticks = np.arange(ymin, ymax, 0.02)
+    plt.yticks(yticks)
+
+    # 2) Train MSE
+    fig2 = plt.figure()
+    plt.plot(train_mse_hist)
+    plt.xlabel("Epoch")
+    plt.ylabel("Train MSE")
+    plt.title("Train MSE over epochs")
+    plt.grid(True, alpha=0.3)
+
+    # 3) Validation MSE
+    fig3 = plt.figure()
+    plt.plot(val_mse_hist)
+    plt.xlabel("Epoch")
+    plt.ylabel("Val MSE")
+    plt.title("Validation MSE over epochs")
+    plt.grid(True, alpha=0.3)
+
+    # 4) bias evolution
+    fig4 = plt.figure()
+    plt.plot(bias_hist)
+    plt.xlabel("Epoch")
+    plt.ylabel("Bias values")
+    plt.title("Bias Parameter Evolution (mean)")
+    plt.grid(True, alpha=0.3)
+
+    fig1.savefig("msfr_cycle_evolution.png")
+    fig2.savefig("msfr_train_mse.png")
+    fig3.savefig("msfr_val_mse.png")
+    fig4.savefig("msfr_bias_evolution.png")
+
+    # 체크포인트 저장 (옵션)
+    if args.save_ckpt is not None:
+        ckpt_path = os.path.abspath(args.save_ckpt)
+        os.makedirs(os.path.dirname(ckpt_path), exist_ok=True)
+        torch.save(model.state_dict(), ckpt_path)
+        print(f"checkpoint saved to: {ckpt_path}")
 
 def main():
     parser = argparse.ArgumentParser(description = "Train MSFR and optionally save checkpoint")
@@ -125,57 +174,8 @@ def main():
         print(f"lr = {scheduler.get_last_lr()[0]:.6f}")
         print(f"cycle:", model.msfr.cycle.detach().cpu().numpy())
         print()
+        make_plots(cycle_hist, train_mse_hist, val_mse_hist, bias_hist, args, model)
     # print(f"[Epoch {epoch:02d}] train MSE: {train_loss:.6f} | val MSE: {val_loss:.6f}")
-
-# -----------------------검증용 플롯---------------------------
-    # 1) cycle 
-    import numpy as np
-    cycle_hist = np.stack(cycle_hist, axis = 0)   
-    fig1 = plt.figure(figsize = (10, 6))
-    plt.plot(cycle_hist[:, 0], label = "day (≈96)")
-    plt.xlabel("Epochs")
-    plt.ylabel("Cycle Length")
-    plt.title("MSFR Cycle Parameter Evolution")
-    plt.legend()
-    plt.grid(True, alpha=0.3)
-    ymin, ymax = plt.ylim()
-    yticks = np.arange(ymin, ymax, 0.02)
-    plt.yticks(yticks)
-
-    # 2) Train MSE
-    fig2 = plt.figure()
-    plt.plot(train_mse_hist)
-    plt.xlabel("Epoch")
-    plt.ylabel("Train MSE")
-    plt.title("Train MSE over epochs")
-    plt.grid(True, alpha=0.3)
-
-    # 3) Validation MSE
-    fig3 = plt.figure()
-    plt.plot(val_mse_hist)
-    plt.xlabel("Epoch")
-    plt.ylabel("Val MSE")
-    plt.title("Validation MSE over epochs")
-    plt.grid(True, alpha=0.3)
-
-    fig4 = plt.figure()
-    plt.plot(bias_hist)
-    plt.xlabel("Epoch")
-    plt.ylabel("Bias values")
-    plt.title("Bias Parameter Evolution (mean)")
-    plt.grid(True, alpha=0.3)
-
-    fig1.savefig("msfr_cycle_evolution.png")
-    fig2.savefig("msfr_train_mse.png")
-    fig3.savefig("msfr_val_mse.png")
-    fig4.savefig("msfr_bias_evolution.png")
-
-    # 체크포인트 저장 (옵션)
-    if args.save_ckpt is not None:
-        ckpt_path = os.path.abspath(args.save_ckpt)
-        os.makedirs(os.path.dirname(ckpt_path), exist_ok=True)
-        torch.save(model.state_dict(), ckpt_path)
-        print(f"checkpoint saved to: {ckpt_path}")
 
 if __name__ == "__main__":
     main()
