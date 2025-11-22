@@ -1,4 +1,4 @@
-#how to 실행 : root directory에서 python -m benchmark.test.train_msfr --save-ckpt ./model/msfr_fixed.ckpt
+#how to run : At root directory -> python -m benchmark.test.train_msfr --save-ckpt ./model/msfr_fixed.ckpt
 import os
 import argparse
 import torch
@@ -10,32 +10,6 @@ from torch.optim.lr_scheduler import LambdaLR # lr 스케줄러
 import matplotlib.pyplot as plt
 import numpy as np
 from torch.utils.data import TensorDataset, DataLoader
-
-"""
-하모닉스를 기존 3에서 10으로 늘려봐도 성능이 거의 그대로임 (변화가 그냥 없음)
-현재 msfr은 모든 출력을 sin cos 조합으로만 표현하고 있는걸로 아는데
-sin cos의 평균은 0이니까 평균값을 스스로 만들 수 없잖아?
-예를 들어 실제 전력 데이터가 2000Wh 근처에서 살짝 진동한다면, 
-MSFR은 진동만 표현할 수 있고 2000이라는 중심값 자체를 못 맞춰서 전체적으로 밀려버림
-"""
-# --------------------------------
-"""
-gpt가 그러는데 
-baseline(mean) RMSE 2375, MAE 269
-baseline(seasonal lag = 96) RMSE 505, MAE 60
--> 이 두 숫자의 차이를 보면,
-
-단순 평균으로도 오차가 2천 정도인데,
-하루 전 값만 써도 오차가 500 정도로 급감한다.
-
-즉, 데이터의 주요 패턴은 “일주기(96)” 하나면 충분히 설명된다는 뜻.
-MSFR은 이걸 못 잡았다는 건, “cycle은 맞지만 위상이 틀렸거나 bias가 없어 중심이 안 맞는다” 쪽이야.
-
-라고 하네요 
-지금 데이터의 사이클은 정확히 적은게 맞음 (92번줄 참고)
-그럼 bias가 없어서 중심이 안맞는다는게 문제
-"""
-# 위에쓴건 좀 고민을 해봐야할거 같습니다
 
 class TestModel(nn.Module):
     def __init__(self, input_dim: int, output_dim: int, n_harmonics: int = 12) -> None:
@@ -58,7 +32,7 @@ def load_dataset(csv_path: str) -> Tuple[torch.Tensor, torch.Tensor]:
 
     y = torch.tensor(df[numeric_cols].values, dtype = torch.float32)
 
-    # 15분 간격 정수 시간축 t 생성 (0,1,2,...) → 입력은 [t, t, t]로 3계절성 공유
+    # 15분 간격 정수 시간축 t 생성 (0,1,2,...) -> 입력은 [t, t, t]로 3계절성 공유
     t = torch.arange(y.shape[0], dtype = torch.float32).unsqueeze(1)  # (N, 1)
     X = t.repeat(1, 3)  # (N, 3) = [t, t, t]
     return X, y
@@ -96,8 +70,7 @@ def main():
 
     model = TestModel(input_dim = input_dim, output_dim = output_dim, n_harmonics = 12).to(device)
 
-    # 주기 파라미터 초기화 (15분 간격): 일 = 96, 주 = 672, 년 ≈ 35040
-    # 나중엔 이 초기화값을 없에고도 성능이 좋아야하는데 어떻게 해야할지 고민을 해야함
+    # 주기 파라미터 초기화 (15분 간격): 일 = 96, 주 = 672, 년 = 35040
     with torch.no_grad():
         init_cycles = torch.tensor([96.0, 96.0 * 7.0, 96.0 * 365.0], dtype = torch.float32, device = device)
         model.msfr.cycle.copy_(init_cycles)
@@ -114,14 +87,6 @@ def main():
     val_mse_hist = []        # [mse_epoch1, mse_epoch2, ...]
     bias_hist = []
 
-    # 44 ~ 50에폭 쯤 부터 bias의 증가량이 감소하는것이 살짝 보임 따라서 현재 50인 에폭을 70으로 늘려볼 예정
-    # 에폭을 늘려도 과적합 신호가 아직 안옴 반대로 주기가 더 안정화 되면서 원본 데이터 그래프의 개형과 비슷해지는중
-    # 현재까지 과소적합이였다는걸 알 수 있음
-    # ------------
-    # 에폭 70, lr 스케쥴러 on, adam 2e-2 조합과
-    # 에폭 50, lr 스케쥴러 off, adam 2e-2 조합의 성능 비교 결과 0.01의 차이도 없이 똑같음
-    # 지금 상황에선 에폭 50, lr 스케쥴러 off, adam 2e-2 조합이 좋은거 같음
-    # 아래 코드는 에폭 70, lr 스케쥴러 on, adam 2e-2 조합
     epochs = 50
     for epoch in range(1, epochs + 1):
         model.train()
@@ -135,12 +100,12 @@ def main():
             total_loss += loss.item() * xb.size(0)
         train_mse = total_loss / X_tr.size(0)
         train_mse_hist.append(train_mse)
-        scheduler.step() # 에폭 끝날 때마다 lr 스케줄러 스텝 호출
+        scheduler.step() # 에폭 끝날 때마다 lr 스케줄러 스텝 호출 (안쓰고 싶으면 주석 처리)
+        train_loss = total_loss / X_tr.size(0)
 
         # 주기 그래프용
         cyc = model.msfr.cycle.detach().cpu().numpy()   # (3,)
         cycle_hist.append(cyc)
-        # train_loss = total_loss / X_tr.size(0)
 
         model.eval()
         with torch.no_grad():
@@ -162,7 +127,6 @@ def main():
         print()
     # print(f"[Epoch {epoch:02d}] train MSE: {train_loss:.6f} | val MSE: {val_loss:.6f}")
 
-
 # -----------------------검증용 플롯---------------------------
     # 1) cycle 
     import numpy as np
@@ -175,7 +139,7 @@ def main():
     plt.legend()
     plt.grid(True, alpha=0.3)
     ymin, ymax = plt.ylim()
-    yticks = np.arange(ymin, ymax, 0.02)  # 간격 조절 : 기존엔 0.005여서 확인이 어려웠던 관계로 0.02로 변경
+    yticks = np.arange(ymin, ymax, 0.02)
     plt.yticks(yticks)
 
     # 2) Train MSE

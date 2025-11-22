@@ -28,8 +28,8 @@ class MSFR(nn.Module):
         self.cycle = Parameter(torch.empty(input_dim, device=device))
         self.reset_parameters(init_cycle) # type: ignore
         
-    def reset_parameters(self, init_cycle:torch.Tensor): # 선형회귀 초기화 + 주기값 초기화
-        nn.init.kaiming_uniform_(self.weight, a=math.sqrt(5))
+    def reset_parameters(self, init_cycle : torch.Tensor): # 선형회귀 초기화 + 주기값 초기화
+        nn.init.kaiming_uniform_(self.weight, a = math.sqrt(5))
         fan_in, _ = nn.init._calculate_fan_in_and_fan_out(self.weight)
         bound = 1.0 / math.sqrt(max(1, fan_in))
         nn.init.uniform_(self.bias, -bound, bound)
@@ -49,7 +49,7 @@ class MSFR(nn.Module):
         angle = x * (2 * math.pi) * harmonics / cycle  # (batch_size, input_dim, n_harmonics)
         sin_terms = torch.sin(angle)
         cos_terms = torch.cos(angle)
-        features = torch.cat([sin_terms, cos_terms], dim=-1) # (batch_size, input_dim, 2 * n_harmonics)
+        features = torch.cat([sin_terms, cos_terms], dim = -1) # (batch_size, input_dim, 2 * n_harmonics)
         features = features.view(features.size(0), -1) # flatten
 
         if self.trend != None: # 추세 항 추가 구현 (테스트 필요)
