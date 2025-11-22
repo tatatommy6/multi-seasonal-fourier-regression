@@ -44,10 +44,10 @@ def train_val_split(X: torch.Tensor, y: torch.Tensor, val_ratio: float = 0.1) ->
     return (X[:split], y[:split]), (X[split:], y[split:])
 
 def lr_lambda(epoch):
-    if epoch < 80:
+    if epoch < 60:
         return 1.0
     else:
-        return 0.95 ** (epoch - 80)
+        return 0.95 ** (epoch - 70)
 
 def main():
     parser = argparse.ArgumentParser(description = "Train MSFR and optionally save checkpoint")
@@ -87,7 +87,7 @@ def main():
     val_mse_hist = []        # [mse_epoch1, mse_epoch2, ...]
     bias_hist = []
 
-    epochs = 50
+    epochs = 70
     for epoch in range(1, epochs + 1):
         model.train()
         total_loss = 0.0

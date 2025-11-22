@@ -56,7 +56,18 @@ class MSFR(nn.Module):
             if self.trend == "linear":
                 trend_features = input
             elif self.trend == "quadratic":
-                trend_features = input ** 2
-            features = torch.cat([features, trend_features], dim=-1)
+                # trend_features = input ** 2 
+                pass
+            # quadratic(input^2)은 장기 추세를 과도하게 키워 Fourier 파형을 왜곡하여 성능 저하 -> 비활성화(테스트용)
+            # 테스트 결과 rmse 값이 좋아지긴 했음 (520 부근에서 510 부근)
+            # 239번이나 345번 가구 그래프를 보면 최댓값, 최소값의 위치가 quadratic을 켰을 때 보다 빨간 점 뭉치의 중심과 더 정확히 정렬되는 경향이 있음
+            
+            # 그리고 다시 생각해봤는데 그래프가 완전 겹치면 모델이 잘못 예측하고 있는거임
+            # '예측' 이잖아. 예측이니까 미래를 그린 곡선이라는 거니까 과거와 완전히 겹치는 곡선이 아니여야 함
+            else:
+                trend_features = None
+
+            if trend_features is not None:
+                features = torch.cat([features, trend_features], dim=-1)
 
         return features @ self.weight.T + self.bias

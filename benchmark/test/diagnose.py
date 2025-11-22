@@ -1,7 +1,6 @@
 # how to run: python -m benchmark.test.diagnose
 import os
 import math
-import argparse
 import torch
 import torch.nn as nn
 from torch.utils.data import TensorDataset, DataLoader
