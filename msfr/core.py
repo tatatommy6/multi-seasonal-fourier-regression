@@ -12,10 +12,8 @@ class MSFR(nn.Module):
     - init_cycle: 주기 초기값
     - trend: 계절성 외에 전체 추세 반영 방식
     """
-
-    # TODO: 주석이 너무 많아 복잡해보임 -> 정리 필요
     
-    def __init__(self, input_dim, output_dim, n_harmonics=3, init_cycle=None ,trend=None, device=None):
+    def __init__(self, input_dim, output_dim, n_harmonics=3, init_cycle=None, trend=None, device=None):
         super().__init__()
         self.n_harmonics = n_harmonics
         self.trend = trend
@@ -64,13 +62,15 @@ class MSFR(nn.Module):
 
             # 그리고 다시 생각해봤는데 그래프가 완전 겹치면 모델이 잘못 예측하고 있는거임
             # '예측' 이잖아. 예측이니까 미래를 그린 곡선이라는 거니까 과거와 완전히 겹치는 곡선이 아니여야 함
+            # - 주기성이 있는 데이터니까 과거와 비슷한 모양이여야 맞는 거임 완전히 겹칠 필요는 없고 그냥 비슷한 모양이면 됨
+            # - 즉, quadratic이 추세항으로서 의미가 있긴 한데, 너무 그 값이 커서 제대로 예측을 못 할 수는 있음
+            # - 근데 그건 지금 돌리고 있는 벤치마크에서만 그런거고, 다른 데이터셋에서는 의미가 있을 수도 있음 
             
             # 너가 생각하기에 quadratic이 필요하다고 생각하면 다시 살려도 됨 
             # 근데 어차피 끄나 키나 수치상 드라마틱한 차이는 없는데 예측 그래프가 더 오른쪽으로 이동해서 난 끄는게 더 좋다고 생각해
             else:
-                trend_features = None
+                raise ValueError("trend must be one of [None, 'linear', 'quadratic']")
 
-            if trend_features is not None:
-                features = torch.cat([features, trend_features], dim=-1)
+            features = torch.cat([features, trend_features], dim=-1)
 
         return features @ self.weight.T + self.bias
