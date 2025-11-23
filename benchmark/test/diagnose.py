@@ -15,7 +15,7 @@ Evaluation Metrics: RMSE, MAE -> huber -> revert to (rmse, mae)
 
 CSV_PATH = "benchmark/test/LD2011_2014_converted.csv"
 N_HARMONICS = 12
-VAL_RATIO = 0.1
+VAL_RATIO = 0.2
 SEASONAL_LAG = 96
 CKPT_PATH = "./model/msfr_fixed.ckpt"
 
@@ -28,8 +28,7 @@ def compute_metrics(y_true: torch.Tensor, y_pred: torch.Tensor) -> Dict[str, flo
 def per_household_rmse(y_true: torch.Tensor, y_pred: torch.Tensor) -> torch.Tensor:
     # (N, H) -> 각 가구별 RMSE(H,)
     se = (y_pred - y_true) ** 2  # (N, H)
-    mse_h = torch.mean(se, dim = 0)  # (H,)
-    rmse_h = torch.sqrt(mse_h)  # (H,)
+    rmse_h = torch.sqrt(torch.mean(se, dim = 0))  # (H,)
     return rmse_h
 
 def mean_baseline(y_train: torch.Tensor, n_val: int) -> torch.Tensor:
@@ -38,7 +37,7 @@ def mean_baseline(y_train: torch.Tensor, n_val: int) -> torch.Tensor:
     return mean_per_house.repeat(n_val, 1)  # (N_val, H)
 
 def seasonal_naive_baseline(y_all: torch.Tensor, split: int, lag: int) -> torch.Tensor:
-    # 검증 구간의 각 시점 t에 대해 t-lag 시점의 값을 그대로 예측
+    # 검증 구간의 각 시점은 과거 동일한 계절(lag) 앞의 값을 그대로 복사해서 예측한다.
     # 유효하려면 split - lag >= 0 이어야 함
     n_val = y_all.shape[0] - split
     if split - lag < 0:
