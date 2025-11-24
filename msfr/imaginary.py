@@ -12,27 +12,27 @@ class MSFR(nn.Module):
     - trend: 계절성 외에 전체 추세 반영 방식
     """
     
-    def __init__(self, input_dim, output_dim, n_harmonics=3, trend=None, device=None):
+    def __init__(self, input_dim, output_dim, n_harmonics=3, init_cycle=None, trend=None, device=None):
         super().__init__()
-        self.device = device or torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self.n_harmonics = n_harmonics
-        self.trend = trend # 추세는 잠시 사용하지 않기로, 더 알아보고 싶음
+        self.trend = trend
 
         trend_dim = input_dim if trend in ["linear", "quadratic"] else 0
         total_features = input_dim * (2 * n_harmonics) + trend_dim
 
-        self.weight = Parameter(torch.empty((output_dim, total_features), device=self.device))
-        self.bias = Parameter(torch.empty(output_dim, device=self.device))
-        self.cycle = Parameter(torch.empty(input_dim, device=self.device))
-        self.reset_parameters()
-
-    def reset_parameters(self) -> None:
-        # 선형회귀 초기화 방식
-        nn.init.xavier_uniform_(self.weight, gain=2.0)
+        self.weight = Parameter(torch.empty((output_dim, total_features), device=device))
+        self.bias = Parameter(torch.empty(output_dim, device=device))
+        self.cycle = Parameter(torch.empty(input_dim, device=device))
+        self.reset_parameters(init_cycle) # type: ignore
+        
+    def reset_parameters(self, init_cycle : torch.Tensor): # 선형회귀 초기화 + 주기값 초기화
+        nn.init.kaiming_uniform_(self.weight, a = math.sqrt(5))
         fan_in, _ = nn.init._calculate_fan_in_and_fan_out(self.weight)
-        bound = 1 / math.sqrt(fan_in) if fan_in > 0 else 0
+        bound = 1.0 / math.sqrt(max(1, fan_in))
         nn.init.uniform_(self.bias, -bound, bound)
-        nn.init.uniform_(self.cycle, 1.0, 10.0)  # 주기 초기값을 1~10 사이로 설정
+        nn.init.uniform_(self.cycle, 0.5, 10.0)
+        if init_cycle is not None:
+            self.cycle.data = init_cycle
 
     def forward(self, input: torch.Tensor) -> torch.Tensor:
         harmonics = torch.arange(1, self.n_harmonics + 1, device=input.device).float()  # (n_harmonics,)
