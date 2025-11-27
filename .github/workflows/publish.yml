@@ -1,33 +1,47 @@
 name: Publish Package (OIDC)
-#TODO: 따로 Release 브랜치를 생성해서 pypi 배포까지만 진행할 수 있게 고치기
+
 on:
   push:
-    tags:
-      - "v*"             # v0.1.0 같은 태그 푸시 때만 실행
+    branches:
+      - Release
 
 jobs:
   publish:
     runs-on: ubuntu-latest
     permissions:
-      id-token: write    # OIDC 필수
+      id-token: write    # Required for OIDC
       contents: read
+
     environment:
-      name: pypi         # GitHub Environments 이름과 동일
+      name: pypi
 
     steps:
       - uses: actions/checkout@v4
+      
       - uses: actions/setup-python@v5
         with:
           python-version: "3.11"
+          cache: "pip"
 
-      - name: Install build tool
+      - name: Install build tools
         run: |
           python -m pip install --upgrade pip
-          pip install build
+          pip install build twine
+
+      - name: Show project version
+        run: |
+          python - <<EOF
+          import tomllib
+          data = tomllib.loads(open("pyproject.toml","rb").read())
+          print("📦 Package version:", data["project"]["version"])
+          EOF
 
       - name: Build sdist & wheel
         run: python -m build
 
+      - name: Check build artifacts
+        run: twine check dist/*
+
       - name: Publish to PyPI (OIDC)
         uses: pypa/gh-action-pypi-publish@release/v1
-        # with: 아무것도 넣지 말 것 (비밀번호/토큰 X)
+        # nothing in "with:" → correct
