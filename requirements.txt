@@ -14,7 +14,7 @@ matplotlib-inline==0.1.7
 tornado==6.5.2
 kagglehub==0.3.13
 requests==2.32.5
-urllib3==2.5.0
+urllib3==2.6.0
 twine==6.2.0
 setuptools==78.1.1
 wheel==0.45.1
