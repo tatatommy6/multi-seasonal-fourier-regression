@@ -37,7 +37,7 @@ y_true = y_val[:, HOUSE].detach().cpu().numpy()
 y_pred = pred_val[:, HOUSE].detach().cpu().numpy()
 t = np.arange(len(y_true))
 
-N = 300   # 원하는 만큼 (100, 500, 1000)
+N = 14256
 t = t[:N]
 y_true = y_true[:N]
 y_pred = y_pred[:N]
