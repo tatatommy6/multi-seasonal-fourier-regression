@@ -4,8 +4,8 @@ import math
 import torch
 import torch.nn as nn
 from torch.utils.data import TensorDataset, DataLoader
-from typing import Tuple, Dict
-from benchmark.test.train_msfr import load_dataset, train_val_split, TestModel
+from typing import Dict
+from benchmark.Electricity_Consumption_Prediction_Test.train_msfr import load_dataset, train_val_split, TestModel
 
 """
 comparison model: MSFR (Multi-Seasonal Fourier Regression), 단순 평균 베이스라인(mean), 계절성 나이브 베이스라인(seasonal naive)

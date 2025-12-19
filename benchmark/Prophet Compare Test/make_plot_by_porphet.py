@@ -2,6 +2,7 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 from prophet import Prophet
+import time
 
 HOUSE = int(input("0 ~ 380: "))
 HOUSE_COL = f"MT_{HOUSE:03d}"
@@ -12,6 +13,7 @@ CSV_PATH = "benchmark/test/LD2011_2014_converted.csv"
 df = pd.read_csv(CSV_PATH)
 df["Datetime"] = pd.to_datetime(df["Datetime"])
 
+start = time.time()
 # Prophet 입력(ds,y) 만들기
 ts = df[["Datetime", HOUSE_COL]].rename(columns={"Datetime": "ds", HOUSE_COL: "y"}).sort_values("ds")
 ts["y"] = pd.to_numeric(ts["y"], errors="coerce")
@@ -60,3 +62,5 @@ plt.legend()
 plt.grid(True, alpha=0.3)
 plt.savefig(f"imgs/{HOUSE}-household_prophet_comparison.png")
 plt.show()
+end = time.time()
+print(f"Elapsed time: {end - start:.2f} seconds")

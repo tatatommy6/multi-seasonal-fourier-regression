@@ -1,9 +1,9 @@
 import torch
 import matplotlib.pyplot as plt
 import numpy as np
-import sys, os
+import sys, os, time
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))) # 난 이거 안쓰면 안돌아감
-from benchmark.test.train_msfr import load_dataset, train_val_split, TestModel
+from benchmark.Electricity_Consumption_Prediction_Test.train_msfr import load_dataset, train_val_split, TestModel
 
 
 HOUSE = int(input("0 ~ 369: "))  # 귀찮아서 인풋으로 바꿈
@@ -15,8 +15,10 @@ CSV_PATH = "benchmark/test/LD2011_2014_converted.csv"
 X, y = load_dataset(CSV_PATH)
 (X_tr, y_tr), (X_val, y_val) = train_val_split(X, y, val_ratio=0.1)
 
+
+start = time.time()
 # 모델 준비
-device = torch.device("mps")
+device = torch.device("mps" if torch.backends.mps.is_available() else "cpu")
 model = TestModel(input_dim = X_tr.shape[1], output_dim = y_tr.shape[1], n_harmonics = 12).to(device)
 
 # 주기 초기화 및 가중치 로드
@@ -58,5 +60,7 @@ plt.legend()
 plt.grid(True, alpha = 0.3)
 plt.savefig(f"imgs/{HOUSE}-household_comparison.png")
 plt.show()
+end = time.time()
+print(f"Elapsed time: {end - start:.2f} seconds")
 # 와 새롭게 안 사실
 # savefig는 show보다 먼저 호출해야함. 무조건!
