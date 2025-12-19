@@ -38,6 +38,10 @@ def load_dataset(csv_path: str) -> Tuple[torch.Tensor, torch.Tensor]:
     t = torch.arange(y.shape[0], dtype=torch.float32).unsqueeze(1)  # (N,1)
     # X = t.repeat(1, 3)  # (N,3): day / week / year 공유
     t_trend = 0.1 * t / y.shape[0] # 추세항
+    # 마지막 구간에 추세항이 과도하게 외삽되어 위로 튀는 현상 발생
+    # 0.1 스케일링으로 외삽 둔화
+    # 0.1은 너무 낮은지 모르겠는데 어떤건 떨어짐 
+    # TODO: 추세항을 넣었을 때 생기는 외삽 현상 해결
     X = torch.cat([t,t,t,t_trend], dim = 1)
 
     # readable 해야하니까 평균, 분산 역정규화
