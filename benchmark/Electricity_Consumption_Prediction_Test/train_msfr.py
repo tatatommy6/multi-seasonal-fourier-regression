@@ -37,7 +37,7 @@ def load_dataset(csv_path: str) -> Tuple[torch.Tensor, torch.Tensor]:
     # 시간축 t (15분 단위)
     t = torch.arange(y.shape[0], dtype=torch.float32).unsqueeze(1)  # (N,1)
     # X = t.repeat(1, 3)  # (N,3): day / week / year 공유
-    t_trend = t / y.shape[0] # 추세항
+    t_trend = 0.1 * t / y.shape[0] # 추세항
     X = torch.cat([t,t,t,t_trend], dim = 1)
 
     # readable 해야하니까 평균, 분산 역정규화
@@ -113,7 +113,7 @@ def main():
     if not os.path.exists(csv_path):
         raise FileNotFoundError(f"dataset file not found: {csv_path}")
 
-    X, y = load_dataset(csv_path)
+    X, y, mean, std = load_dataset(csv_path)
     (X_tr, y_tr), (X_val, y_val) = train_val_split(X, y, val_ratio=0.1)
 
     #device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -128,7 +128,7 @@ def main():
 
     # 주기 파라미터 초기화 (15분 간격): 일 = 96, 주 = 672, 년 = 35040
     with torch.no_grad():
-        init_cycles = torch.tensor([96.0, 96.0 * 7.0, 96.0 * 365.0], dtype = torch.float32, device = device)
+        init_cycles = torch.tensor([96.0, 96.0 * 7.0, 96.0 * 365.0, 1.0], dtype = torch.float32, device = device)
         model.msfr.cycle.copy_(init_cycles)
 
     train_loader = DataLoader(TensorDataset(X_tr, y_tr), batch_size = 512, shuffle = True)
