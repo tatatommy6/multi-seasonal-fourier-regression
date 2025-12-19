@@ -1,4 +1,4 @@
-#how to run : At root directory -> python -m benchmark.test.train_msfr --save-ckpt ./model/msfr_fixed.ckpt
+#how to run : At root directory -> python -m benchmark.Electricity_Consumption_Prediction_Test.train_msfr --save-ckpt ./model/msfr_fixed.ckpt
 import os
 import argparse
 import torch
@@ -23,17 +23,25 @@ class TestModel(nn.Module):
 def load_dataset(csv_path: str) -> Tuple[torch.Tensor, torch.Tensor]:
     df = pd.read_csv(csv_path)
 
-    # 첫 컬럼이 날짜/인덱스일 가능성에 대비하여 숫자형 컬럼만 타깃으로 사용
-    numeric_cols = df.select_dtypes(include = ["number"]).columns.tolist()
-    if len(numeric_cols) == 0:
-        raise ValueError("there is no numeric columns in the dataset it must be 370 households")
+    house_cols = [c for c in df.columns if c.startswith("MT_")]
 
-    y = torch.tensor(df[numeric_cols].values, dtype = torch.float32)
+    y_np = df[house_cols].values.astype("float32")  # (N, H)
 
-    # 15분 간격 정수 시간축 t 생성 (0,1,2,...) -> 입력은 [t, t, t]로 3계절성 공유
-    t = torch.arange(y.shape[0], dtype = torch.float32).unsqueeze(1)  # (N, 1)
-    X = t.repeat(1, 3)  # (N, 3) = [t, t, t]
-    return X, y
+    # 정규화
+    mean = y_np.mean(axis=0, keepdims=True)
+    std  = y_np.std(axis=0, keepdims=True) + 1e-6
+    y_np = (y_np - mean) / std
+
+    y = torch.tensor(y_np, dtype=torch.float32)
+
+    # 시간축 t (15분 단위)
+    t = torch.arange(y.shape[0], dtype=torch.float32).unsqueeze(1)  # (N,1)
+    # X = t.repeat(1, 3)  # (N,3): day / week / year 공유
+    t_trend = t / y.shape[0] # 추세항
+    X = torch.cat([t,t,t,t_trend], dim = 1)
+
+    # readable 해야하니까 평균, 분산 역정규화
+    return X, y, mean.squeeze(0), std.squeeze(0)
 
 def train_val_split(X: torch.Tensor, y: torch.Tensor, val_ratio: float = 0.1) -> Tuple[Tuple[torch.Tensor, torch.Tensor], Tuple[torch.Tensor, torch.Tensor]]:
     n = X.shape[0]
@@ -158,12 +166,24 @@ def main():
         model.eval()
         with torch.no_grad():
             val_total = 0.0
+            # preds = []
+            # trues = []
             for xb, yb in val_loader:
                 pred = model(xb)
                 val_total += loss_fn(pred, yb).item() * xb.size(0)
+
+                # preds.append(pred.detach().cpu())
+                # trues.append(yb.detach().cpu())
+
             val_loss = val_total / X_val.size(0)
             val_mse = val_loss
             val_mse_hist.append(val_mse)
+
+            # pred_all = torch.cat(preds, dim = 0)
+            # y_all = torch.cat(trues, dim = 0)
+
+            # print("y_val min/max:", y_all.min().item(), y_all.max().item())
+            # print("pred_val min/max:", pred_all.min().item(), pred_all.max())
 
         # 바이어스 그래프용
         b = model.msfr.bias.detach().cpu().numpy()

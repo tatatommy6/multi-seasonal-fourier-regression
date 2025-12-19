@@ -12,7 +12,7 @@ CKPT_PATH = "./model/msfr_fixed.ckpt"
 CSV_PATH = "benchmark/test/LD2011_2014_converted.csv"
 
 # 데이터 불러오기
-X, y = load_dataset(CSV_PATH)
+X, y, mean, std= load_dataset(CSV_PATH)
 (X_tr, y_tr), (X_val, y_val) = train_val_split(X, y, val_ratio=0.1)
 
 
