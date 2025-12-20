@@ -107,7 +107,6 @@ def main():
     val_metrics   = compute_metrics(y_val_real, pred_val_real)
     rmse_h = per_household_rmse(y_val_real, pred_val_real).detach().cpu()
 
-
     print(f"model | train RMSE = {train_metrics['rmse']:.3f}, val RMSE = {val_metrics['rmse']:.3f}, val MAE = {val_metrics['mae']:.3f}")
     print(f"per-household RMSE | mean = {rmse_h.mean().item():.3f}, median = {rmse_h.median().item():.3f}, min = {rmse_h.min().item():.3f}, max = {rmse_h.max().item():.3f}")
 

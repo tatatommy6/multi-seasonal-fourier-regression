@@ -6,7 +6,6 @@ import pandas as pd
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))) # 난 이거 안쓰면 안돌아감
 from benchmark.Electricity_Consumption_Prediction_Test.train_msfr import load_dataset, train_val_split, TestModel
 
-
 HOUSE = int(input("0 ~ 369: "))  # 귀찮아서 인풋으로 바꿈
 
 CKPT_PATH = "./model/msfr_fixed.ckpt"
@@ -15,7 +14,6 @@ CSV_PATH = "benchmark/test/LD2011_2014_converted.csv"
 # 데이터 불러오기
 X, y, mean, std= load_dataset(CSV_PATH)
 (X_tr, y_tr), (X_val, y_val) = train_val_split(X, y, val_ratio=0.1)
-
 
 start = time.time()
 # 모델 준비
@@ -82,5 +80,3 @@ plt.legend()
 plt.grid(True, alpha=0.3)
 plt.savefig(f"imgs/{HOUSE}-household_comparison_with_trend.png")
 plt.show()
-# 와 새롭게 안 사실
-# savefig는 show보다 먼저 호출해야함. 무조건!
