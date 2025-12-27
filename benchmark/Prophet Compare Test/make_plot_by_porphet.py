@@ -7,7 +7,7 @@ import time
 HOUSE = int(input("0 ~ 380: "))
 HOUSE_COL = f"MT_{HOUSE:03d}"
 
-CSV_PATH = "benchmark/test/LD2011_2014_converted.csv"
+CSV_PATH = "benchmark/Electricity_Consumption_Prediction_Test/LD2011_2014_converted.csv" # Change file path
 
 # 데이터 불러오기
 df = pd.read_csv(CSV_PATH)
@@ -28,7 +28,8 @@ train = ts.iloc[:split]
 val   = ts.iloc[split:]
 
 # 모델 학습
-m = Prophet(daily_seasonality=True, weekly_seasonality=True, yearly_seasonality=True)
+m = Prophet(daily_seasonality=True, weekly_seasonality=True, yearly_seasonality=True) # type: ignore
+# I make PR to fix this wrong type announce at prophet
 m.fit(train)
 
 # validation 구간 예측

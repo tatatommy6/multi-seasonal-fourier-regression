@@ -14,7 +14,7 @@ dataset: LD2011_2014_converted.csv (15-minute power consumption data)
 Evaluation Metrics: RMSE, MAE -> huber -> revert to (rmse, mae)
 """
 
-CSV_PATH = "benchmark/test/LD2011_2014_converted.csv"
+CSV_PATH = "benchmark/Electricity_Consumption_Prediction_Test/LD2011_2014_converted.csv"
 N_HARMONICS = 12
 VAL_RATIO = 0.2
 SEASONAL_LAG = 96

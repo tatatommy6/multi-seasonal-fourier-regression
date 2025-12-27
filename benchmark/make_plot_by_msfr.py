@@ -9,7 +9,7 @@ from benchmark.Electricity_Consumption_Prediction_Test.train_msfr import load_da
 HOUSE = int(input("0 ~ 369: "))  # 귀찮아서 인풋으로 바꿈
 
 CKPT_PATH = "./model/msfr_fixed.ckpt"
-CSV_PATH = "benchmark/test/LD2011_2014_converted.csv"
+CSV_PATH = "benchmark/Electricity_Consumption_Prediction_Test/LD2011_2014_converted.csv"
 
 # 데이터 불러오기
 X, y, mean, std= load_dataset(CSV_PATH)
@@ -22,7 +22,7 @@ model = TestModel(input_dim = X_tr.shape[1], output_dim = y_tr.shape[1], n_harmo
 
 # 주기 초기화 및 가중치 로드
 with torch.no_grad():
-    init_cycles = torch.tensor([96.0, 96.0 * 7.0, 96.0 * 365.0, 1.0], dtype = torch.float32, device = device)
+    init_cycles = torch.tensor([96.0, 96.0 * 7.0, 96.0 * 365.0], dtype = torch.float32, device = device)
     model.msfr.cycle.copy_(init_cycles)
 state = torch.load(CKPT_PATH, map_location=device)
 model.load_state_dict(state)

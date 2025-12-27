@@ -13,14 +13,12 @@ from torch.utils.data import TensorDataset, DataLoader
 class TestModel(nn.Module):
     def __init__(self, input_dim: int, output_dim: int, n_harmonics: int = 12) -> None:
         super().__init__()
-        self.msfr = MSFR(input_dim = input_dim, 
-        output_dim = output_dim, 
-        n_harmonics = n_harmonics)
+        self.msfr = MSFR(input_dim, output_dim, n_harmonics = n_harmonics, trend="linear")
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         return self.msfr(x)
 
-def load_dataset(csv_path: str) -> Tuple[torch.Tensor, torch.Tensor]:
+def load_dataset(csv_path: str):
     df = pd.read_csv(csv_path)
 
     house_cols = [c for c in df.columns if c.startswith("MT_")]
@@ -28,19 +26,15 @@ def load_dataset(csv_path: str) -> Tuple[torch.Tensor, torch.Tensor]:
     y_np = df[house_cols].values.astype("float32")  # (N, H)
 
     # 정규화
-    mean = y_np.mean(axis=0, keepdims=True)
-    std  = y_np.std(axis=0, keepdims=True) + 1e-6
+    mean:torch.Tensor = y_np.mean(axis=0, keepdims=True) # add type annotations for easier read
+    std:torch.Tensor  = y_np.std(axis=0, keepdims=True) + 1e-6
     y_np = (y_np - mean) / std
 
     y = torch.tensor(y_np, dtype=torch.float32)
 
     # 시간축 t (15분 단위)
     t = torch.arange(y.shape[0], dtype=torch.float32).unsqueeze(1)  # (N,1)
-    # X = t.repeat(1, 3)  # (N,3): day / week / year 공유
-    t_trend = 6e-2 * t / y.shape[0] # 추세항
-    # 마지막 구간에 추세항이 과도하게 외삽되어 위로 튀는 현상 발생
-    # TODO: 추세항을 넣었을 때 생기는 외삽 현상 해결
-    X = torch.cat([t,t,t,t_trend], dim = 1)
+    X = t.repeat(1, 3)  # (N,3): day / week / year 공유
 
     # readable 해야하니까 평균, 분산 역정규화
     return X, y, mean.squeeze(0), std.squeeze(0)
@@ -111,11 +105,11 @@ def main():
     parser = argparse.ArgumentParser(description = "Train MSFR and optionally save checkpoint")
     parser.add_argument("--save-ckpt", type = str, default = None)
     args = parser.parse_args()
-    csv_path = "benchmark/test/LD2011_2014_converted.csv"
+    csv_path = "benchmark/Electricity_Consumption_Prediction_Test/LD2011_2014_converted.csv"
     if not os.path.exists(csv_path):
         raise FileNotFoundError(f"dataset file not found: {csv_path}")
 
-    X, y, mean, std = load_dataset(csv_path)
+    X, y, mean, std = load_dataset(csv_path) # https://github.com/tatatommy6/multi-seasonal-fourier-regression/issues/7
     (X_tr, y_tr), (X_val, y_val) = train_val_split(X, y, val_ratio=0.1)
 
     #device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -130,7 +124,7 @@ def main():
 
     # 주기 파라미터 초기화 (15분 간격): 일 = 96, 주 = 672, 년 = 35040
     with torch.no_grad():
-        init_cycles = torch.tensor([96.0, 96.0 * 7.0, 96.0 * 365.0, 1.0], dtype = torch.float32, device = device)
+        init_cycles = torch.tensor([96.0, 96.0 * 7.0, 96.0 * 365.0], dtype = torch.float32, device = device)
         model.msfr.cycle.copy_(init_cycles)
 
     train_loader = DataLoader(TensorDataset(X_tr, y_tr), batch_size = 512, shuffle = True)
