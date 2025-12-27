@@ -1,11 +1,12 @@
-# how to run: python -m benchmark.test.diagnose
+# how to run: python -m benchmark.Electricity_Consumption_Prediction_Test.diagnose
 import os
 import math
 import torch
 import torch.nn as nn
+import numpy as np
 from torch.utils.data import TensorDataset, DataLoader
-from typing import Tuple, Dict
-from benchmark.test.train_msfr import load_dataset, train_val_split, TestModel
+from typing import Dict
+from benchmark.Electricity_Consumption_Prediction_Test.train_msfr import load_dataset, train_val_split, TestModel
 
 """
 comparison model: MSFR (Multi-Seasonal Fourier Regression), 단순 평균 베이스라인(mean), 계절성 나이브 베이스라인(seasonal naive)
@@ -18,6 +19,23 @@ N_HARMONICS = 12
 VAL_RATIO = 0.2
 SEASONAL_LAG = 96
 CKPT_PATH = "./model/msfr_fixed.ckpt"
+
+# 역정규화 함수(안하면 우리가 읽을 수가 없음)
+def inverse_normalize(y: torch.Tensor, mean, std) -> torch.Tensor:
+    """
+    y   : (N, H) normalized torch tensor
+    mean: (H,) numpy or torch
+    std : (H,) numpy or torch
+    """
+    if not torch.is_tensor(mean):
+        mean = torch.from_numpy(mean)
+    if not torch.is_tensor(std):
+        std = torch.from_numpy(std)
+
+    mean = mean.to(y.device)
+    std = std.to(y.device)
+
+    return y * std + mean
 
 def compute_metrics(y_true: torch.Tensor, y_pred: torch.Tensor) -> Dict[str, float]:
     mse = torch.mean((y_pred - y_true) ** 2).item()
@@ -50,7 +68,7 @@ def main():
     if not os.path.exists(CSV_PATH):
         raise FileNotFoundError(f"cannot find data file: {CSV_PATH}")
 
-    X, y = load_dataset(CSV_PATH)
+    X, y, mean, std = load_dataset(CSV_PATH)
     (X_tr, y_tr), (X_val, y_val) = train_val_split(X, y, val_ratio=VAL_RATIO)
 
     device = torch.device("cuda" if torch.cuda.is_available() else ("mps" if torch.backends.mps.is_available() else "cpu"))
@@ -79,9 +97,15 @@ def main():
         pred_tr = model(X_tr)
         pred_val = model(X_val)
 
-    train_metrics = compute_metrics(y_tr, pred_tr)
-    val_metrics = compute_metrics(y_val, pred_val)
-    rmse_h = per_household_rmse(y_val, pred_val).detach().cpu()
+    y_tr_real   = inverse_normalize(y_tr, mean, std)
+    pred_tr_real = inverse_normalize(pred_tr, mean, std)
+
+    y_val_real   = inverse_normalize(y_val, mean, std)
+    pred_val_real = inverse_normalize(pred_val, mean, std)
+
+    train_metrics = compute_metrics(y_tr_real, pred_tr_real)
+    val_metrics   = compute_metrics(y_val_real, pred_val_real)
+    rmse_h = per_household_rmse(y_val_real, pred_val_real).detach().cpu()
 
     print(f"model | train RMSE = {train_metrics['rmse']:.3f}, val RMSE = {val_metrics['rmse']:.3f}, val MAE = {val_metrics['mae']:.3f}")
     print(f"per-household RMSE | mean = {rmse_h.mean().item():.3f}, median = {rmse_h.median().item():.3f}, min = {rmse_h.min().item():.3f}, max = {rmse_h.max().item():.3f}")
