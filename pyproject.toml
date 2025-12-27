@@ -8,7 +8,7 @@ version = "1.1.0"
 description = "Python library for multi-seasonal time series regression with Fourier features and smoothing"
 readme = "README.md"
 requires-python = ">=3.11"
-license = { text = "Apache-2.0" }
+license = "Apache-2.0"
 
 authors = [
   { name = "rrayy", email = "taejunham1@gmail.com" },
@@ -18,6 +18,10 @@ authors = [
 dependencies = [
   "torch==2.8.0"
 ]
+
+[tool.setuptools]
+packages = ["msfr"]
+
 
 [project.urls]
 Homepage = "https://github.com/tatatommy6/multi-seasonal-fourier-regression"
