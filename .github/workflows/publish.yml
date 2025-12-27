@@ -9,11 +9,10 @@ jobs:
   publish:
     runs-on: ubuntu-latest
     permissions:
-      id-token: write    # Required for OIDC
+      id-token: write    # OIDC 필수
       contents: read
-
     environment:
-      name: pypi
+      name: pypi         # GitHub Environments 이름과 동일
 
     steps:
       - uses: actions/checkout@v4
@@ -21,27 +20,15 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.11"
-          cache: "pip"
 
       - name: Install build tools
         run: |
           python -m pip install --upgrade pip
-          pip install build twine
-
-      - name: Show project version
-        run: |
-          python - <<EOF
-          import tomllib
-          data = tomllib.loads(open("pyproject.toml","rb").read())
-          print("📦 Package version:", data["project"]["version"])
-          EOF
+          pip install build
 
       - name: Build sdist & wheel
         run: python -m build
 
-      - name: Check build artifacts
-        run: twine check dist/*
-
       - name: Publish to PyPI (OIDC)
         uses: pypa/gh-action-pypi-publish@release/v1
-        # nothing in "with:" → correct
+        # with: 아무것도 넣지 말 것 (비밀번호/토큰 X)
