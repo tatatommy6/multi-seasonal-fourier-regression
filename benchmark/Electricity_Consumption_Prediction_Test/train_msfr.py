@@ -20,23 +20,21 @@ class TestModel(nn.Module):
 
 def load_dataset(csv_path: str):
     df = pd.read_csv(csv_path)
-
     house_cols = [c for c in df.columns if c.startswith("MT_")]
 
     y_np = df[house_cols].values.astype("float32")  # (N, H)
 
     # 정규화
-    mean:torch.Tensor = y_np.mean(axis=0, keepdims=True) # add type annotations for easier read
-    std:torch.Tensor  = y_np.std(axis=0, keepdims=True) + 1e-6
+    mean = y_np.mean(axis=0, keepdims=True)
+    std = y_np.std(axis=0, keepdims=True) + 1e-6
     y_np = (y_np - mean) / std
 
     y = torch.tensor(y_np, dtype=torch.float32)
 
     # 시간축 t (15분 단위)
     t = torch.arange(y.shape[0], dtype=torch.float32).unsqueeze(1)  # (N,1)
-    X = t.repeat(1, 3)  # (N,3): day / week / year 공유
+    X = t.repeat(1, 3)  # (N,3)
 
-    # readable 해야하니까 평균, 분산 역정규화
     return X, y, mean.squeeze(0), std.squeeze(0)
 
 def train_val_split(X: torch.Tensor, y: torch.Tensor, val_ratio: float = 0.1) -> Tuple[Tuple[torch.Tensor, torch.Tensor], Tuple[torch.Tensor, torch.Tensor]]:
@@ -48,7 +46,7 @@ def lr_lambda(epoch):
     if epoch < 60:
         return 1.0
     else:
-        return 0.95 ** (epoch - 70)
+        return 0.95 ** (epoch - 60)
 
 def make_plots(cycle_hist, train_mse_hist, val_mse_hist, bias_hist, args, model):
     # 1) cycle 
@@ -105,7 +103,7 @@ def main():
     parser = argparse.ArgumentParser(description = "Train MSFR and optionally save checkpoint")
     parser.add_argument("--save-ckpt", type = str, default = None)
     args = parser.parse_args()
-    csv_path = "benchmark/Electricity_Consumption_Prediction_Test/LD2011_2014_converted.csv"
+    csv_path = "benchmark/test/LD2011_2014_converted.csv"
     if not os.path.exists(csv_path):
         raise FileNotFoundError(f"dataset file not found: {csv_path}")
 
@@ -185,7 +183,7 @@ def main():
         b = model.msfr.bias.detach().cpu().numpy()
         bias_hist.append(b.mean())
 
-        print(f"[Epoch {epoch:02d}] bias mean = {b.mean():.3f}, "f"min = {b.min():.3f}, max = {b.max():.3f}")
+        print(f"[Epoch {epoch:02d}] bias mean = {b.mean():.3f}, min = {b.min():.3f}, max = {b.max():.3f}")
         print(f"lr = {scheduler.get_last_lr()[0]:.6f}")
         print(f"cycle:", model.msfr.cycle.detach().cpu().numpy())
         print()
