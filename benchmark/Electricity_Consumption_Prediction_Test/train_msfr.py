@@ -103,11 +103,11 @@ def main():
     parser = argparse.ArgumentParser(description = "Train MSFR and optionally save checkpoint")
     parser.add_argument("--save-ckpt", type = str, default = None)
     args = parser.parse_args()
-    csv_path = "benchmark/test/LD2011_2014_converted.csv"
+    csv_path = "benchmark/Electricity_Consumption_Prediction_Test/LD2011_2014_converted.csv"
     if not os.path.exists(csv_path):
         raise FileNotFoundError(f"dataset file not found: {csv_path}")
 
-    X, y, mean, std = load_dataset(csv_path) # https://github.com/tatatommy6/multi-seasonal-fourier-regression/issues/7
+    X, y, _, _ = load_dataset(csv_path) # https://github.com/tatatommy6/multi-seasonal-fourier-regression/issues/7
     (X_tr, y_tr), (X_val, y_val) = train_val_split(X, y, val_ratio=0.1)
 
     #device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
