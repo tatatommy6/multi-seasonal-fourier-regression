@@ -3,7 +3,7 @@ requires = ["setuptools>=61.0", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "MSFR"   # 대문자도 가능하지만, PyPI는 소문자 권장 (필요시 "msfr"로 바꿔도 OK)
+name = "msfr"   # 소문자로 바꾸는게 낮다고 생각 (다음 릴리스 때 같이 적용)
 version = "1.1.0"
 description = "Python library for multi-seasonal time series regression with Fourier features and smoothing"
 readme = "README.md"
