@@ -18,4 +18,4 @@ requests==2.32.5
 urllib3==2.6.3
 twine==6.2.0
 setuptools==78.1.1
-wheel==0.45.1
+wheel==0.46.2
