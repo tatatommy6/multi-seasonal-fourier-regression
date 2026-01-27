@@ -40,7 +40,7 @@ class MSFR(nn.Module):
         cycles = F.softplus(self.cycle) + 1e-3
 
         # 브로드캐스팅을 위해 차원 정렬
-        x = input.unsqueeze(-1)                # (batch_size, input_dim, 1)
+        x = input.unsqueeze(-1)                 # (batch_size, input_dim, 1)
         harmonics = harmonics.view(1, 1, -1)    # (1, 1, n_harmonics)
         cycle = cycles.view(1, -1, 1)           # (1, input_dim, 1)
 
@@ -55,12 +55,7 @@ class MSFR(nn.Module):
                 trend_features = input
             elif self.trend == "quadratic":
                 trend_features = input ** 2 # quadratic이 의미를 가질 수 있다는 것에 동의한다고 생각하여 다시 살림
-            
-            # 그리고 다시 생각해봤는데 그래프가 완전 겹치면 모델이 잘못 예측하고 있는거임
-            # '예측' 이잖아. 예측이니까 미래를 그린 곡선이라는 거니까 과거와 완전히 겹치는 곡선이 아니여야 함
-            # - 주기성이 있는 데이터니까 과거와 비슷한 모양이여야 맞는 거임 완전히 겹칠 필요는 없고 그냥 비슷한 모양이면 됨
-            #   -> 음 ㅇㅋ 그니까 비슷한 모양이 나오게 하는데 완전히 겹치지는 않고 조금 앞으로 가있는 모양이 나오면 가장 좋은거지
-            #       - 아니 앞으로 가면 안되지 현재의 값을 예측할 수 있어야 미래의 값도 예측할 수 있는거니까
+
             else:
                 raise ValueError("trend must be one of [None, 'linear', 'quadratic']")
 

@@ -9,6 +9,7 @@ class MSFR(nn.Module):
     Multi-Seasonal Fourier Regression (MSFR) 레이어 클래스 (복소수 버전).
 
     - n_harmonics:주기별 세밀함 정도
+    - init_cycle: 주기 초기값
     - trend: 계절성 외에 전체 추세 반영 방식
     """
     
@@ -47,5 +48,15 @@ class MSFR(nn.Module):
         features = torch.exp(angle)
         features = features.view(features.size(0), -1) #(batch_size, input_dim * 2 * n_harmonics) 형태로 flatten
 
-        #TODO: 추세 항 추가 구현
+        if self.trend != None: # 추세 항 추가 구현 (테스트 필요)
+            if self.trend == "linear":
+                trend_features = input
+            elif self.trend == "quadratic":
+                trend_features = input ** 2 # quadratic이 의미를 가질 수 있다는 것에 동의한다고 생각하여 다시 살림
+
+            else:
+                raise ValueError("trend must be one of [None, 'linear', 'quadratic']")
+
+            features = torch.cat([features, trend_features], dim=-1)
+
         return features @ self.weight.T + self.bias
