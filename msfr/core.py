@@ -10,16 +10,15 @@ class MSFR(nn.Module):
 
     - n_harmonics: 주기별 세밀함 정도
     - init_cycle: 주기 초기값
-    - trend: 계절성 외에 전체 추세 반영 방식
+    - trend: 계절성 외에 전체 추세 반영 여부
     """
     
-    def __init__(self, input_dim, output_dim, n_harmonics=3, init_cycle=None, trend=None, device=None):
+    def __init__(self, input_dim, output_dim, n_harmonics=3, trend=False, init_cycle=None, device=None):
         super().__init__()
         self.n_harmonics = n_harmonics
-        self.trend = trend
 
-        trend_dim = input_dim if trend in ["linear", "quadratic"] else 0
-        total_features = input_dim * (2 * n_harmonics) + trend_dim
+        self.trend_dim = input_dim if trend else 0
+        total_features = input_dim * (2 * n_harmonics) + self.trend_dim
 
         self.weight = Parameter(torch.empty((output_dim, total_features), device=device))
         self.bias = Parameter(torch.empty(output_dim, device=device))
@@ -50,15 +49,8 @@ class MSFR(nn.Module):
         features = torch.cat([sin_terms, cos_terms], dim = -1) # (batch_size, input_dim, 2 * n_harmonics)
         features = features.view(features.size(0), -1) # flatten
 
-        if self.trend != None: # 추세 항 추가 구현 (테스트 필요)
-            if self.trend == "linear":
-                trend_features = input
-            elif self.trend == "quadratic":
-                trend_features = input ** 2 # quadratic이 의미를 가질 수 있다는 것에 동의한다고 생각하여 다시 살림
-
-            else:
-                raise ValueError("trend must be one of [None, 'linear', 'quadratic']")
-
+        if self.trend_dim > 0:
+            trend_features = x
             features = torch.cat([features, trend_features], dim=-1)
 
         return features @ self.weight.T + self.bias
