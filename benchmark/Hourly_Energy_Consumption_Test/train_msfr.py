@@ -1,4 +1,4 @@
-# how to run : At root directory -> python -m benchmark.Electricity_Consumption_Prediction_Test.train_msfr_new --save-ckpt ./model/msfr_new.ckpt
+# how to run : At root directory -> python -m benchmark.Hourly_Energy_Consumption_Test.train_msfr_new --save-ckpt ./model/msfr_new.ckpt
 import os
 import argparse
 import torch
@@ -16,6 +16,7 @@ class TestModel(nn.Module):
         self.msfr = MSFR(input_dim, output_dim, n_harmonics = n_harmonics, trend=True)
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
+        print(x)
         return self.msfr(x)
 
 def load_datasets(csv_path: str):
