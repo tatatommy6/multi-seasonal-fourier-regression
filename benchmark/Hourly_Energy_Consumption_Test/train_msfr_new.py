@@ -1,4 +1,4 @@
-#how to run : At root directory -> python -m benchmark.Electricity_Consumption_Prediction_Test.train_msfr_new --save-ckpt ./model/msfr_new.ckpt
+# how to run : At root directory -> python -m benchmark.Electricity_Consumption_Prediction_Test.train_msfr_new --save-ckpt ./model/msfr_new.ckpt
 import os
 import argparse
 import torch
@@ -13,7 +13,7 @@ from torch.utils.data import TensorDataset, DataLoader
 class TestModel(nn.Module):
     def __init__(self, input_dim: int, output_dim: int, n_harmonics: int = 12) -> None:
         super().__init__()
-        self.msfr = MSFR(input_dim, output_dim, n_harmonics = n_harmonics, trend="linear")
+        self.msfr = MSFR(input_dim, output_dim, n_harmonics = n_harmonics, trend=True)
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         return self.msfr(x)
