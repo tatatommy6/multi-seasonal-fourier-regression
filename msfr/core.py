@@ -50,7 +50,7 @@ class MSFR(nn.Module):
         features = features.view(features.size(0), -1) # flatten
 
         if self.trend_dim > 0:
-            trend_features = x
+            trend_features = input
             features = torch.cat([features, trend_features], dim=-1)
 
         return features @ self.weight.T + self.bias
