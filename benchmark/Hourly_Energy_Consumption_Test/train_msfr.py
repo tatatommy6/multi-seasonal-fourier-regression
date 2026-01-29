@@ -1,4 +1,4 @@
-# how to run : At root directory -> python -m benchmark.Hourly_Energy_Consumption_Test.train_msfr_new --save-ckpt ./model/msfr_new.ckpt
+# how to run : At root directory -> python -m benchmark.Hourly_Energy_Consumption_Test.train_msfr --save-ckpt ./model/msfr_new.ckpt
 import os
 import argparse
 import torch
