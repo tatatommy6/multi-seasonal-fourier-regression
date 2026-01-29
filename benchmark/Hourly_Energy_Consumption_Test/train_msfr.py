@@ -6,6 +6,7 @@ import pandas as pd
 from typing import Tuple
 from msfr import MSFR
 import torch.nn as nn
+import numpy as np
 from torch.optim.lr_scheduler import LambdaLR # lr 스케줄러
 import matplotlib.pyplot as plt
 from torch.utils.data import TensorDataset, DataLoader
@@ -16,7 +17,7 @@ class TestModel(nn.Module):
         self.msfr = MSFR(input_dim, output_dim, n_harmonics = n_harmonics, trend=True)
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
-        print(x)
+        # print(x)
         return self.msfr(x)
 
 def load_datasets(csv_path: str):
@@ -36,8 +37,8 @@ def load_datasets(csv_path: str):
     y_np = df[plant_cols].values.astype("float32")
 
     # 정규화
-    mean = y_np.mean(axis=0, keepdims=True)
-    std = y_np.std(axis=0, keepdims=True) + 1e-6
+    mean = np.nanmean(y_np,axis=0, keepdims=True)
+    std = np.nanstd(y_np,axis=0, keepdims=True) + 1e-6
     y_np = (y_np - mean) / std
 
     y = torch.tensor(y_np, dtype=torch.float32)
@@ -142,6 +143,12 @@ def main():
     optimizer = torch.optim.Adam(model.parameters(), lr=5e-2)
     scheduler = LambdaLR(optimizer, lr_lambda=lr_lambda) # lr 스케줄러
     loss_fn = nn.MSELoss()
+    def masked_mse(pred: torch.Tensor, target: torch.Tensor) -> torch.Tensor:
+        mask = torch.isfinite(target) & torch.isfinite(pred)
+        diff2 = (pred - target) ** 2
+        den = mask.sum().clamp_min(1)          # mask가 0개인 배치 방지
+        return diff2[mask].sum() / den
+
 
     cycle_hist = []          # [(day, week, year), ...]
     train_mse_hist = []      # [mse_epoch1, mse_epoch2, ...]
@@ -152,10 +159,11 @@ def main():
     for epoch in range(1, epochs + 1):
         model.train()
         total_loss = 0.0
+
         for xb, yb in train_loader:
             optimizer.zero_grad(set_to_none = True)
             pred = model(xb)
-            loss = loss_fn(pred, yb)
+            loss = masked_mse(pred, yb)
             loss.backward()
             optimizer.step()
             total_loss += loss.item() * xb.size(0)
@@ -175,7 +183,7 @@ def main():
             # trues = []
             for xb, yb in val_loader:
                 pred = model(xb)
-                val_total += loss_fn(pred, yb).item() * xb.size(0)
+                val_total += masked_mse(pred, yb).item() * xb.size(0)
 
                 # preds.append(pred.detach().cpu())
                 # trues.append(yb.detach().cpu())
