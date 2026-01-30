@@ -56,10 +56,11 @@ def train_val_split(X: torch.Tensor, y: torch.Tensor, val_ratio: float = 0.1) ->
     return (X[:split], y[:split]), (X[split:], y[split:])
 
 def lr_lambda(epoch):
-    if epoch < 60:
+    if epoch < 40:
         return 1.0
     else:
-        return 0.95 ** (epoch - 60)
+        # return 0.95 ** (epoch - 40)
+        return 1.0
 
 def make_plots(cycle_hist, train_mse_hist, val_mse_hist, bias_hist, args, model):
     # 1) cycle 
@@ -80,6 +81,7 @@ def make_plots(cycle_hist, train_mse_hist, val_mse_hist, bias_hist, args, model)
     fig2 = plt.figure()
     plt.plot(train_mse_hist)
     plt.xlabel("Epoch")
+    plt.yscale("log")
     plt.ylabel("Train MSE")
     plt.title("Train MSE over epochs")
     plt.grid(True, alpha=0.3)
@@ -87,6 +89,7 @@ def make_plots(cycle_hist, train_mse_hist, val_mse_hist, bias_hist, args, model)
     # 3) Validation MSE
     fig3 = plt.figure()
     plt.plot(val_mse_hist)
+    plt.yscale("log")
     plt.xlabel("Epoch")
     plt.ylabel("Val MSE")
     plt.title("Validation MSE over epochs")
@@ -160,7 +163,11 @@ def main():
     val_mse_hist = []        # [mse_epoch1, mse_epoch2, ...]
     bias_hist = []
 
-    epochs = 70
+    # 모델이 핵심 패턴을 매우 초기에 학습했고, 이후 학습은 성능 개선 없이 파라미터 드리프트만 유발했기 때문에 에폭을 줄임.
+    # 줄이게 된 계기는 평가, 학습 mse 그래프의 단위가 10^8 이여서 뒷 구간의 mse변화가 안보였음
+    # 하지만 log로 바꾸니 30에폭부터 mse값이 요동치는게 보였음
+    # 실제로 30에폭일때나 12에폭일때나 최종 평가 rmse값은 미세한 차이였음
+    epochs = 12
     for epoch in range(1, epochs + 1):
         model.train()
         total_loss = 0.0
