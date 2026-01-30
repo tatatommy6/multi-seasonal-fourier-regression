@@ -140,14 +140,19 @@ def main():
     train_loader = DataLoader(TensorDataset(X_tr, y_tr), batch_size = 512, shuffle = True)
     val_loader = DataLoader(TensorDataset(X_val, y_val), batch_size = 1024, shuffle = False)
 
-    optimizer = torch.optim.Adam(model.parameters(), lr=5e-2)
+    optimizer = torch.optim.Adam(model.parameters(), lr=4e-2)
     scheduler = LambdaLR(optimizer, lr_lambda=lr_lambda) # lr 스케줄러
     loss_fn = nn.MSELoss()
     def masked_mse(pred: torch.Tensor, target: torch.Tensor) -> torch.Tensor:
         mask = torch.isfinite(target) & torch.isfinite(pred)
-        diff2 = (pred - target) ** 2
-        den = mask.sum().clamp_min(1)          # mask가 0개인 배치 방지
-        return diff2[mask].sum() / den
+        den = mask.sum()
+        if den == 0:
+            # 이 배치 전체가 결측이면 학습 신호가 없음 (0 loss로 처리)
+            return pred.new_tensor(0.0)
+
+        diff = torch.where(mask, pred - target, torch.zeros_like(pred))  # NaN 생성 자체를 막음
+        return (diff * diff).sum() / den
+
 
 
     cycle_hist = []          # [(day, week, year), ...]
