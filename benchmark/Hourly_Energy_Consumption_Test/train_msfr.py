@@ -12,7 +12,7 @@ import matplotlib.pyplot as plt
 from torch.utils.data import TensorDataset, DataLoader
 
 class TestModel(nn.Module):
-    def __init__(self, input_dim: int, output_dim: int, n_harmonics: int = 12) -> None:
+    def __init__(self, input_dim: int, output_dim: int, n_harmonics: int = 6) -> None:
         super().__init__()
         self.msfr = MSFR(input_dim, output_dim, n_harmonics = n_harmonics, trend=True)
 
@@ -130,17 +130,17 @@ def main():
     input_dim = X_tr.shape[1]  # 3 (일/주/년 계절성 위한 공유 t)
     output_dim = y_tr.shape[1]
 
-    model = TestModel(input_dim = input_dim, output_dim = output_dim, n_harmonics = 12).to(device)
+    model = TestModel(input_dim = input_dim, output_dim = output_dim, n_harmonics = 6).to(device)
 
     # 주기 파라미터 초기화 (1시간 간격): 일 = 24, 주 = 168, 년 = 8760
-    with torch.no_grad():
-        init_cycles = torch.tensor([24.0, 24.0 * 7.0, 24.0 * 365.0], dtype = torch.float32, device = device)
-        model.msfr.cycle.copy_(init_cycles)
+    # with torch.no_grad():
+    #     init_cycles = torch.tensor([24.0, 24.0 * 7.0, 24.0 * 365.0], dtype = torch.float32, device = device)
+    #     model.msfr.cycle.copy_(init_cycles)
 
     train_loader = DataLoader(TensorDataset(X_tr, y_tr), batch_size = 512, shuffle = True)
     val_loader = DataLoader(TensorDataset(X_val, y_val), batch_size = 1024, shuffle = False)
 
-    optimizer = torch.optim.Adam(model.parameters(), lr=4e-2)
+    optimizer = torch.optim.Adam(model.parameters(), lr=1e-4)
     scheduler = LambdaLR(optimizer, lr_lambda=lr_lambda) # lr 스케줄러
     loss_fn = nn.MSELoss()
     def masked_mse(pred: torch.Tensor, target: torch.Tensor) -> torch.Tensor:
