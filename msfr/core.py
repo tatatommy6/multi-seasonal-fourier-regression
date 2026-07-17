@@ -33,7 +33,13 @@ class MSFR(nn.Module):
         nn.init.uniform_(self.bias, -bound, bound)
         nn.init.uniform_(self.log_cycle, -2.0, 2.0)
         if init_cycle is not None:
-            self.log_cycle.data = torch.log(torch.exp(init_cycle) - 1.0)
+            if torch.any(init_cycle <= 0):
+                raise ValueError("init_cycle values must be positive")
+            # Stable inverse of softplus. log(exp(x) - 1) overflows for
+            # realistic long seasonal periods such as an hourly year (8760).
+            inverse_softplus = init_cycle + torch.log(-torch.expm1(-init_cycle))
+            with torch.no_grad():
+                self.log_cycle.copy_(inverse_softplus)
 
     @property
     def cycle(self) -> torch.Tensor:
