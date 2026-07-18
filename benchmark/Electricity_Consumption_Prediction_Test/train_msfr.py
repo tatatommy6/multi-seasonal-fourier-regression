@@ -187,8 +187,8 @@ def main():
         print(f"lr = {scheduler.get_last_lr()[0]:.6f}")
         print(f"cycle:", model.msfr.cycle.detach().cpu().numpy())
         print()
+    print(f"[Epoch {epoch:02d}] train MSE: {train_loss:.2f} | val MSE: {val_loss:.2f}")
     make_plots(cycle_hist, train_mse_hist, val_mse_hist, bias_hist, args, model)
-    # print(f"[Epoch {epoch:02d}] train MSE: {train_loss:.6f} | val MSE: {val_loss:.6f}")
 
 if __name__ == "__main__":
     main()

@@ -156,8 +156,6 @@ def main():
         diff = torch.where(mask, pred - target, torch.zeros_like(pred))  # NaN 생성 자체를 막음
         return (diff * diff).sum() / den
 
-
-
     cycle_hist = []          # [(day, week, year), ...]
     train_mse_hist = []      # [mse_epoch1, mse_epoch2, ...]
     val_mse_hist = []        # [mse_epoch1, mse_epoch2, ...]
@@ -218,8 +216,8 @@ def main():
         print(f"lr = {scheduler.get_last_lr()[0]:.6f}")
         print(f"cycle:", model.msfr.cycle.detach().cpu().numpy())
         print()
+    print(f"[Epoch {epoch:02d}] train MSE: {train_loss:.2f} | val MSE: {val_loss:.2f}")
     make_plots(cycle_hist, train_mse_hist, val_mse_hist, bias_hist, args, model)
-    # print(f"[Epoch {epoch:02d}] train MSE: {train_loss:.6f} | val MSE: {val_loss:.6f}")
 
 if __name__ == "__main__":
     main()

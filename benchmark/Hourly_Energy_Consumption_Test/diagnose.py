@@ -1,4 +1,4 @@
-# how to run: python -m benchmark.Hourly_Energy_Consumption_Test.diagnose_msfr
+# how to run: python -m benchmark.Hourly_Energy_Consumption_Test.diagnose
 
 import os
 import math
