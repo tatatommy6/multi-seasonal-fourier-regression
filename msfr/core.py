@@ -5,6 +5,8 @@ from torch.nn.parameter import Parameter
 import torch.nn.functional as F
 from typing import Optional
 
+MIN_CYCLE = 1e-3
+
 class MSFR(nn.Module):
     """
     Multi-Seasonal Fourier Regression (MSFR) 레이어 클래스.
@@ -33,11 +35,14 @@ class MSFR(nn.Module):
         nn.init.uniform_(self.bias, -bound, bound)
         nn.init.uniform_(self.log_cycle, -2.0, 2.0)
         if init_cycle is not None:
-            if torch.any(init_cycle <= 0):
-                raise ValueError("init_cycle values must be positive")
+            if torch.any(init_cycle <= MIN_CYCLE):
+                raise ValueError(f"init_cycle values must be greater than {MIN_CYCLE}")
             # Stable inverse of softplus. log(exp(x) - 1) overflows for
             # realistic long seasonal periods such as an hourly year (8760).
-            inverse_softplus = init_cycle + torch.log(-torch.expm1(-init_cycle))
+            softplus_target = init_cycle - MIN_CYCLE
+            inverse_softplus = softplus_target + torch.log(
+                -torch.expm1(-softplus_target)
+            )
             with torch.no_grad():
                 self.log_cycle.copy_(inverse_softplus)
 
@@ -47,11 +52,11 @@ class MSFR(nn.Module):
         MSFR 레이어의 주기 파라미터를 반환합니다.
         하지만 해당 파라미터를 직접 수정하지 마세요. 대신 init_cycle 인자를 사용하세요.
         """
-        return F.softplus(self.log_cycle) + 1e-3
+        return F.softplus(self.log_cycle) + MIN_CYCLE
 
     def forward(self, input: torch.Tensor) -> torch.Tensor:
         harmonics = torch.arange(1, self.n_harmonics + 1, device=input.device).float()  # (n_harmonics,)
-        cycles = F.softplus(self.log_cycle) + 1e-3
+        cycles = F.softplus(self.log_cycle) + MIN_CYCLE
 
         # 브로드캐스팅을 위해 차원 정렬
         x = input.unsqueeze(-1)                 # (batch_size, input_dim, 1)
