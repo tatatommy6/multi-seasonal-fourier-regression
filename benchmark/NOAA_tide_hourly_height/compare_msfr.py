@@ -23,7 +23,7 @@ from benchmark.NOAA_tide_hourly_height.train_msfr import (
 
 
 DEFAULT_LEARNED = Path("model/noaa_tide_msfr_learned_seed42.ckpt")
-DEFAULT_FIXED = Path("model/noaa_tide_msfr_fixed_seed42.ckpt")
+DEFAULT_FIXED = Path("model/noaa_tide_msfr.ckpt")
 DEFAULT_OUTPUT = Path(
     "benchmark/NOAA_tide_hourly_height/msfr_baseline_comparison.csv"
 )

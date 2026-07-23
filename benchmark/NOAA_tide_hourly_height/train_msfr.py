@@ -15,7 +15,7 @@ from pathlib import Path
 
 import matplotlib
 
-matplotlib.use("Agg")
+matplotlib.use("Agg") # render plots entirely in the background computer memorey -> plt.show() X
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
@@ -59,7 +59,7 @@ class TideMSFR(nn.Module):
         )
         self.trend = nn.Linear(1, 1, bias=False)
         nn.init.zeros_(self.trend.weight)
-        self.register_buffer("time_center", torch.tensor(time_center, dtype=torch.float32))
+        self.register_buffer("time_center", torch.tensor(time_center, dtype=torch.float32)) # to register a tensor as a part of a module`s state, but without treating it as a trainable parameter
         self.register_buffer("time_scale", torch.tensor(time_scale, dtype=torch.float32))
 
     def forward(self, time_hours: torch.Tensor) -> torch.Tensor:
@@ -75,7 +75,7 @@ def load_dataset(csv_path: Path) -> tuple[pd.DatetimeIndex, torch.Tensor, torch.
     frame = pd.read_csv(csv_path, skipinitialspace=True)
     frame.columns = frame.columns.str.strip()
     required = {"Date Time", "Water Level"}
-    missing = required.difference(frame.columns)
+    missing = required.difference(frame.columns) # set(required - frame.columns)
     if missing:
         raise ValueError(f"missing columns in dataset: {sorted(missing)}")
 
@@ -97,7 +97,7 @@ def load_dataset(csv_path: Path) -> tuple[pd.DatetimeIndex, torch.Tensor, torch.
     time = torch.tensor(elapsed_hours, dtype=torch.float32).unsqueeze(1)
     target = torch.tensor(
         frame["Water Level"].to_numpy(dtype=np.float32), dtype=torch.float32
-    ).unsqueeze(1)
+    ).unsqueeze(1) # inserts a new dimension of size 1 at index position of a tensor`s shape
     return timestamps, time, target
 
 
@@ -155,7 +155,7 @@ def predict(
     with torch.no_grad():
         for (time_batch,) in loader:
             batches.append(model(time_batch.to(device)).cpu())
-    return torch.cat(batches)
+    return torch.cat(batches) # concatenate tensors along a specific dimension
 
 
 def save_plots(
@@ -290,12 +290,12 @@ def main() -> None:
     model = TideMSFR(
         args.n_harmonics, time_center, time_scale, init_cycles
     ).to(device)
-    model.msfr.log_cycle.requires_grad_(not args.freeze_cycles)
+    model.msfr.log_cycle.requires_grad_(not args.freeze_cycles) #in-place method used to change whether a tensor tracks gradients for training
 
     train_loader = DataLoader(
         TensorDataset(time_train, target_train),
         batch_size=args.batch_size,
-        shuffle=True,
+        shuffle=True
     )
     val_loader = DataLoader(
         TensorDataset(time_val, target_val),
